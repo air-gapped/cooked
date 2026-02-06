@@ -5,9 +5,9 @@ set -e
 
 echo "Running tests before push..."
 
-# Skip if no Go packages exist yet
-if ! go list ./... >/dev/null 2>&1; then
-    echo "SKIP: no Go packages found"
+# Skip if no Go source files exist yet
+if [ -z "$(find . -name '*.go' -not -path './vendor/*' 2>/dev/null)" ]; then
+    echo "SKIP: no Go files found"
     exit 0
 fi
 
