@@ -1,22 +1,19 @@
-#!/bin/sh
-# Pre-push hook: run tests before allowing push
+#!/usr/bin/env sh
+# bd-shim v1
+# bd-hooks-version: 0.49.4
+#
+# bd (beads) pre-push hook - thin shim
+#
+# This shim delegates to 'bd hooks run pre-push' which contains
+# the actual hook logic. This pattern ensures hook behavior is always
+# in sync with the installed bd version - no manual updates needed.
 
-set -e
-
-echo "Running tests before push..."
-
-# Skip if no Go source files exist yet
-if [ -z "$(find . -name '*.go' -not -path './vendor/*' 2>/dev/null)" ]; then
-    echo "SKIP: no Go files found"
+# Check if bd is available
+if ! command -v bd >/dev/null 2>&1; then
+    echo "Warning: bd command not found in PATH, skipping pre-push hook" >&2
+    echo "  Install bd: brew install beads" >&2
+    echo "  Or add bd to your PATH" >&2
     exit 0
 fi
 
-# Run tests bypassing cache to ensure fresh results
-if ! go test -count=1 ./... 2>&1; then
-    echo ""
-    echo "\033[0;31mTests failed. Push aborted.\033[0m"
-    echo "Fix the failing tests and try again."
-    exit 1
-fi
-
-echo "\033[0;32mTests passed.\033[0m"
+exec bd hooks run pre-push "$@"

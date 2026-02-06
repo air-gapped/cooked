@@ -1,0 +1,99 @@
+#!/bin/sh
+# Pre-commit hook: run checks before allowing commit
+
+set -e
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+fail() {
+    echo "${RED}FAILED:${NC} $1"
+    exit 1
+}
+
+pass() {
+    echo "${GREEN}OK:${NC} $1"
+}
+
+# Large file check (1MB limit)
+MAX_SIZE=1048576
+echo "Checking for large files..."
+for file in $(git diff --cached --name-only --diff-filter=ACM); do
+    if [ -f "$file" ]; then
+        size=$(wc -c < "$file" | tr -d ' ')
+        if [ "$size" -gt "$MAX_SIZE" ]; then
+            fail "$file is $(($size / 1024))KB (max 1MB)"
+        fi
+    fi
+done
+pass "no large files"
+
+# Blocklist check (private domains, hostnames, etc.)
+echo "Checking blocklist..."
+if [ -f ".blocklist" ]; then
+    for file in $(git diff --cached --name-only --diff-filter=ACM); do
+        if [ -f "$file" ]; then
+            while IFS= read -r pattern || [ -n "$pattern" ]; do
+                # Skip empty lines and comments
+                case "$pattern" in
+                    ""|\#*) continue ;;
+                esac
+                if grep -qF "$pattern" "$file" 2>/dev/null; then
+                    fail "blocklisted pattern '$pattern' found in $file"
+                fi
+            done < .blocklist
+        fi
+    done
+    pass "blocklist"
+else
+    echo "SKIP: no .blocklist file"
+fi
+
+# Go fmt (only check .go files)
+echo "Checking go fmt..."
+if command -v gofmt >/dev/null 2>&1; then
+    gofiles=$(find . -name '*.go' -not -path './vendor/*' 2>/dev/null || true)
+    if [ -n "$gofiles" ]; then
+        unformatted=$(gofmt -l . 2>/dev/null | grep -v vendor || true)
+        if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            fail "run 'go fmt ./...' to fix"
+        fi
+        pass "go fmt"
+    else
+        echo "SKIP: no Go files found"
+    fi
+else
+    echo "SKIP: gofmt not installed"
+fi
+
+# Go vet (skip if no Go source files exist yet)
+echo "Checking go vet..."
+if command -v go >/dev/null 2>&1; then
+    if [ -n "$(find . -name '*.go' -not -path './vendor/*' 2>/dev/null)" ]; then
+        if ! go vet ./... 2>/dev/null; then
+            fail "go vet found issues"
+        fi
+        pass "go vet"
+    else
+        echo "SKIP: no Go files found"
+    fi
+else
+    echo "SKIP: go not installed"
+fi
+
+# Gitleaks (staged files only)
+echo "Checking for secrets..."
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! gitleaks protect --staged --no-banner; then
+        fail "gitleaks found secrets"
+    fi
+    pass "gitleaks"
+else
+    echo "SKIP: gitleaks not installed"
+fi
+
+echo ""
+echo "${GREEN}All checks passed${NC}"
