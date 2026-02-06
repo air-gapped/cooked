@@ -1,0 +1,22 @@
+#!/bin/sh
+# Pre-push hook: run tests before allowing push
+
+set -e
+
+echo "Running tests before push..."
+
+# Skip if no Go packages exist yet
+if ! go list ./... >/dev/null 2>&1; then
+    echo "SKIP: no Go packages found"
+    exit 0
+fi
+
+# Run tests bypassing cache to ensure fresh results
+if ! go test -count=1 ./... 2>&1; then
+    echo ""
+    echo "\033[0;31mTests failed. Push aborted.\033[0m"
+    echo "Fix the failing tests and try again."
+    exit 1
+fi
+
+echo "\033[0;32mTests passed.\033[0m"

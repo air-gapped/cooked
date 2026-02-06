@@ -1,0 +1,28 @@
+# Binary
+/cooked
+/dist/
+
+# Embedded assets downloaded by `make deps`
+embed/*
+!embed/.gitkeep
+!embed/LICENSES.md
+!embed/README.md
+
+# Fuzz cache
+testdata/fuzz/
+
+# Coverage
+*.out
+coverage.html
+
+# OS
+.DS_Store
+
+# Environment
+.env
+
+# Blocklist (contains private hostnames/domains — never commit)
+.blocklist
+
+# Local scratch space (tests, lab notes, experiments)
+.local/
