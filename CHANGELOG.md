@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.7](https://github.com/air-gapped/cooked/compare/v1.0.6...v1.0.7) (2026-02-07)
+
+
+### Bug Fixes
+
+* align first line of code blocks with subsequent lines ([d62eee4](https://github.com/air-gapped/cooked/commit/d62eee43667b83920359fd44a81145b71c9aaa07))
+* strip leading space-padding from chroma line numbers ([0bf1f05](https://github.com/air-gapped/cooked/commit/0bf1f05377332e4a951635018708ff59f54fb7d2))
+
 ## [1.0.6](https://github.com/air-gapped/cooked/compare/v1.0.5...v1.0.6) (2026-02-07)
 
 
