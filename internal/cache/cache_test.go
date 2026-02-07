@@ -161,6 +161,40 @@ func TestCache_ConcurrentAccess(t *testing.T) {
 	}
 }
 
+func TestCache_KeyIsFullURL(t *testing.T) {
+	c := New(5*time.Minute, 1024*1024)
+
+	// Same path, different query strings should be different cache keys
+	c.Put("https://example.com/file.md?token=abc", Entry{HTML: []byte("abc"), Size: 3})
+	c.Put("https://example.com/file.md?token=xyz", Entry{HTML: []byte("xyz"), Size: 3})
+
+	entry1, status1 := c.Get("https://example.com/file.md?token=abc")
+	if status1 != StatusHit {
+		t.Errorf("status = %q, want hit", status1)
+	}
+	if string(entry1.HTML) != "abc" {
+		t.Errorf("HTML = %q, want abc", string(entry1.HTML))
+	}
+
+	entry2, status2 := c.Get("https://example.com/file.md?token=xyz")
+	if status2 != StatusHit {
+		t.Errorf("status = %q, want hit", status2)
+	}
+	if string(entry2.HTML) != "xyz" {
+		t.Errorf("HTML = %q, want xyz", string(entry2.HTML))
+	}
+
+	// URL without query string is a separate key
+	_, status3 := c.Get("https://example.com/file.md")
+	if status3 != StatusMiss {
+		t.Errorf("bare URL status = %q, want miss", status3)
+	}
+
+	if c.Len() != 2 {
+		t.Errorf("Len = %d, want 2", c.Len())
+	}
+}
+
 func TestCache_SizeAccounting(t *testing.T) {
 	c := New(5*time.Minute, 1024*1024)
 

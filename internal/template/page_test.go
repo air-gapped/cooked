@@ -2,6 +2,7 @@ package template
 
 import (
 	"html/template"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -214,6 +215,87 @@ func TestRenderPage_Title(t *testing.T) {
 
 	if !strings.Contains(html, "<title>README.md — cooked</title>") {
 		t.Error("title not extracted from URL")
+	}
+}
+
+func TestRenderPage_NoExternalRequests(t *testing.T) {
+	r := NewRenderer()
+	html := string(r.RenderPage(PageData{
+		Version:      "v0.1.0",
+		UpstreamURL:  "https://example.com/README.md",
+		ContentType:  render.TypeMarkdown,
+		CacheStatus:  "miss",
+		DefaultTheme: "auto",
+		Title:        "README",
+		Content:      template.HTML("<h1>Hello</h1><p>World</p>"),
+		HasMermaid:   true,
+		MermaidPath:  "/_cooked/mermaid.min.js",
+		HeadingCount: 5,
+		Headings: []render.Heading{
+			{Level: 1, Text: "A", ID: "a"},
+			{Level: 2, Text: "B", ID: "b"},
+			{Level: 2, Text: "C", ID: "c"},
+			{Level: 3, Text: "D", ID: "d"},
+			{Level: 2, Text: "E", ID: "e"},
+		},
+	}, "", ""))
+
+	// Find all src= and href= attributes and verify none point to external domains.
+	// Allowed: data: URIs, fragment-only (#...), relative paths (/_cooked/...),
+	// and the upstream source link itself.
+	srcPattern := regexp.MustCompile(`(?i)\b(src|href)\s*=\s*"([^"]*)"`)
+	matches := srcPattern.FindAllStringSubmatch(html, -1)
+
+	for _, m := range matches {
+		url := m[2]
+
+		// Skip empty, fragment-only, and data: URIs
+		if url == "" || strings.HasPrefix(url, "#") || strings.HasPrefix(url, "data:") {
+			continue
+		}
+
+		// Skip relative paths (our own embedded assets)
+		if strings.HasPrefix(url, "/") && !strings.HasPrefix(url, "//") {
+			continue
+		}
+
+		// The only allowed external URL is the upstream source link
+		if url == "https://example.com/README.md" {
+			continue
+		}
+
+		t.Errorf("found external reference: %s=%q — rendered HTML must not make external requests", m[1], url)
+	}
+}
+
+func TestRenderError_NoExternalRequests(t *testing.T) {
+	r := NewRenderer()
+	html := string(r.RenderError(ErrorData{
+		Version:      "v0.1.0",
+		UpstreamURL:  "https://example.com/missing.md",
+		StatusCode:   404,
+		ErrorType:    "upstream-error",
+		Message:      "Not Found",
+		DefaultTheme: "auto",
+	}))
+
+	srcPattern := regexp.MustCompile(`(?i)\b(src|href)\s*=\s*"([^"]*)"`)
+	matches := srcPattern.FindAllStringSubmatch(html, -1)
+
+	for _, m := range matches {
+		url := m[2]
+
+		if url == "" || strings.HasPrefix(url, "#") || strings.HasPrefix(url, "data:") {
+			continue
+		}
+		if strings.HasPrefix(url, "/") && !strings.HasPrefix(url, "//") {
+			continue
+		}
+		if url == "https://example.com/missing.md" {
+			continue
+		}
+
+		t.Errorf("error page has external reference: %s=%q", m[1], url)
 	}
 }
 

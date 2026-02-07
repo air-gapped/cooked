@@ -97,7 +97,6 @@ When in doubt about ANY operation that could lose work, ask first.
 2. **`.claude/skills/`** — Update the appropriate skill
 3. **README.md** — Update user-facing documentation (configuration, security, usage)
 
-Note: SPEC.md is the build specification, not user documentation.
 
 **Checklist before completing a feature:**
 - [ ] Is the CLI flag documented with `--help` text?
