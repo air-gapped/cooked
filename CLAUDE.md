@@ -14,6 +14,20 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+### Plan-Beads Linking
+
+Every implementation plan item MUST have a matching beads issue. This ensures:
+- Progress is trackable across sessions via `bd list`/`bd ready`
+- Dependencies between work items are explicit via `bd dep`
+- History survives context compaction (beads persist, plans don't)
+
+**Rules:**
+- Create beads issues BEFORE starting implementation
+- Use `--notes="Plan: <plan-item-title>"` to link beads back to the plan
+- Set dependencies with `bd dep add` matching the plan's dependency graph
+- Mark `in_progress` when starting, `bd close` when done
+- Epic-level beads group related work items for overview
+
 ### Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

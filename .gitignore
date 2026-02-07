@@ -7,6 +7,7 @@ embed/*
 !embed/.gitkeep
 !embed/LICENSES.md
 !embed/README.md
+!embed/embed.go
 
 # Fuzz cache
 testdata/fuzz/
