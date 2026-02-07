@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/air-gapped/cooked/compare/v1.0.0...v1.0.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* use crane for Docker image builds instead of BuildKit ([575f8e6](https://github.com/air-gapped/cooked/commit/575f8e6b826068ef8a59db80de0d2545951330bd))
+* use kaniko for Docker image builds on ARC runners ([e2f5fbf](https://github.com/air-gapped/cooked/commit/e2f5fbf1be24537e966c5e04d6e84114234bce11))
+
 ## 1.0.0 (2026-02-07)
 
 
