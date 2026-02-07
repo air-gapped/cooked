@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/air-gapped/cooked/compare/v1.0.2...v1.0.3) (2026-02-07)
+
+
+### Bug Fixes
+
+* add github.com host to kaniko git context URL ([5802f3d](https://github.com/air-gapped/cooked/commit/5802f3daa61eaa517a4a9100fd17fabae3241dee))
+
 ## [1.0.2](https://github.com/air-gapped/cooked/compare/v1.0.1...v1.0.2) (2026-02-07)
 
 
