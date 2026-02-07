@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
   packages: write
 
 jobs:
@@ -18,10 +17,17 @@ jobs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
+      - uses: actions/create-github-app-token@v2.2.1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: go
+          token: ${{ steps.app-token.outputs.token }}
 
   build-binaries:
     needs: release-please
