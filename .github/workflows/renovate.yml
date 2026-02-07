@@ -33,5 +33,5 @@ jobs:
         env:
           RENOVATE_TOKEN: ${{ steps.app-token.outputs.token }}
           RENOVATE_REPOSITORIES: ${{ github.repository }}
-          LOG_LEVEL: info
+          LOG_LEVEL: debug
         run: npx --yes renovate@43
