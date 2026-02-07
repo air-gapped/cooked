@@ -1,0 +1,65 @@
+---
+title: Getting Started
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+# Getting Started
+
+Install the package using your preferred package manager:
+
+<Tabs>
+<TabItem label="npm">
+
+```bash
+npm install @example/sdk
+```
+
+</TabItem>
+<TabItem label="yarn">
+
+```bash
+yarn add @example/sdk
+```
+
+</TabItem>
+<TabItem label="pnpm">
+
+```bash
+pnpm add @example/sdk
+```
+
+</TabItem>
+</Tabs>
+
+## Configuration
+
+Create a config file:
+
+```javascript
+export default {
+  apiKey: process.env.API_KEY,
+  region: 'us-east-1',
+};
+```
+
+<CustomAlert type="info" />
+
+## Usage
+
+```python
+from example_sdk import Client
+
+client = Client()
+result = client.query("hello")
+print(result)
+```
+
+export const metadata = {
+  editUrl: 'https://github.com/example/docs/edit/main/',
+};
+
+That's all you need to get started!

@@ -1,0 +1,85 @@
+---
+title: API Reference
+description: Complete API reference for the SDK.
+---
+
+import { Callout, Steps, Tab, Tabs } from 'nextra/components';
+
+# API Reference
+
+<Callout type="warning">
+  This API is in beta. Breaking changes may occur.
+</Callout>
+
+## Authentication
+
+<Steps>
+
+### Get an API Key
+
+Sign up at the dashboard to get your key.
+
+### Configure the Client
+
+```go
+client := sdk.NewClient(
+    sdk.WithAPIKey(os.Getenv("API_KEY")),
+    sdk.WithTimeout(30 * time.Second),
+)
+```
+
+### Make Your First Request
+
+```go
+resp, err := client.Get(ctx, "/users")
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+</Steps>
+
+## Endpoints
+
+<Tabs items={['REST', 'GraphQL']}>
+<Tab>
+
+All REST endpoints use JSON:
+
+| Method | Path       | Description     |
+|--------|------------|-----------------|
+| GET    | /users     | List users      |
+| POST   | /users     | Create user     |
+| GET    | /users/:id | Get user detail |
+
+</Tab>
+<Tab>
+
+GraphQL endpoint: `/graphql`
+
+```graphql
+query {
+  users(first: 10) {
+    id
+    name
+    email
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Error Codes
+
+| Code | Meaning           |
+|------|-------------------|
+| 400  | Bad request       |
+| 401  | Unauthorized      |
+| 404  | Not found         |
+| 429  | Rate limited      |
+| 500  | Internal error    |
+
+export default function Layout({ children }) {
+  return <div className="api-docs">{children}</div>;
+}

@@ -1,0 +1,14 @@
+Plain Text Document
+===================
+
+This is a plain text file with no special formatting.
+It should be rendered inside <pre><code> tags with HTML entities escaped.
+
+Special characters: < > & " '
+Tabs:	between	words
+Unicode: café, naïve, 日本語
+
+    Indented block
+    with spaces
+
+End of file.
