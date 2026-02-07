@@ -99,7 +99,7 @@ jobs:
           printf '{"auths":{"ghcr.io":{"auth":"%s"}}}' "$AUTH" > /kaniko/.docker/config.json
 
           /kaniko/executor \
-            --context="${{ github.server_url }}/${{ github.repository }}.git#${{ github.sha }}" \
+            --context="git://${{ github.repository }}.git#${{ github.ref }}#${{ github.sha }}" \
             --dockerfile=Dockerfile \
             --build-arg="LDFLAGS=-X main.version=${TAG} -X main.commit=${SHA} -X main.date=${DATE}" \
             --destination="${REPO}:${VERSION}" \
