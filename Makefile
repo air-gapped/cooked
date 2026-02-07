@@ -21,6 +21,9 @@ LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DA
 IMAGE   := cooked
 SHA_TAG := sha-$(COMMIT)
 
+# Cross-platform SHA-256 (shasum -a 256 on macOS, sha256sum on Linux)
+SHA256SUM := $(shell command -v shasum >/dev/null 2>&1 && echo "shasum -a 256" || echo "sha256sum")
+
 # Tool paths (support tools installed in GOPATH/bin)
 GOPATH  := $(shell go env GOPATH)
 GOLANGCI_LINT := $(shell command -v golangci-lint 2>/dev/null || echo $(GOPATH)/bin/golangci-lint)
@@ -37,9 +40,9 @@ deps:
 	curl -fsSL -o embed/mermaid.min.js "$(MERMAID_URL)"
 	curl -fsSL -o embed/github-markdown-light.css "$(GITHUB_MD_CSS_BASE)/github-markdown-light.css"
 	curl -fsSL -o embed/github-markdown-dark.css "$(GITHUB_MD_CSS_BASE)/github-markdown-dark.css"
-	@echo "$(MERMAID_SHA256)  embed/mermaid.min.js" | shasum -a 256 -c
-	@echo "$(GITHUB_MD_LIGHT_SHA256)  embed/github-markdown-light.css" | shasum -a 256 -c
-	@echo "$(GITHUB_MD_DARK_SHA256)  embed/github-markdown-dark.css" | shasum -a 256 -c
+	@echo "$(MERMAID_SHA256)  embed/mermaid.min.js" | $(SHA256SUM) -c
+	@echo "$(GITHUB_MD_LIGHT_SHA256)  embed/github-markdown-light.css" | $(SHA256SUM) -c
+	@echo "$(GITHUB_MD_DARK_SHA256)  embed/github-markdown-dark.css" | $(SHA256SUM) -c
 	cp README.md embed/project-readme.md
 	@echo "deps: downloaded and verified mermaid@$(MERMAID_VERSION), github-markdown-css@$(GITHUB_MD_CSS_VERSION)"
 

@@ -13,6 +13,10 @@ jobs:
   test:
     runs-on: arc-runner-set
     steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends make curl ca-certificates
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
