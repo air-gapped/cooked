@@ -10,19 +10,22 @@
       "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/",
-      "automerge": true
+      "automerge": true,
+      "semanticCommitType": "fix"
     },
     {
       "description": "Automerge minor/patch for GitHub Actions",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "automerge": true,
+      "semanticCommitType": "fix"
     },
     {
       "description": "Automerge patch-level Docker updates",
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["patch"],
-      "automerge": true
+      "automerge": true,
+      "semanticCommitType": "fix"
     },
     {
       "description": "Do not bump go directive in go.mod",
