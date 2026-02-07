@@ -56,6 +56,18 @@ func PreprocessMDX(source []byte) []byte {
 	// Strip JSX expressions: {props.foo}, {<Component />}
 	content = jsxExprRe.ReplaceAllString(content, "")
 
+	// Final pass: strip import/export lines exposed by JSX removal
+	lines2 := strings.Split(content, "\n")
+	var cleaned []string
+	for _, line := range lines2 {
+		trimmed := strings.TrimSpace(line)
+		if importRe.MatchString(trimmed) || exportRe.MatchString(trimmed) {
+			continue
+		}
+		cleaned = append(cleaned, line)
+	}
+	content = strings.Join(cleaned, "\n")
+
 	return []byte(content)
 }
 

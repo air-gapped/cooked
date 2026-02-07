@@ -1,0 +1,2 @@
+go test fuzz v1
+string("import X from 'x'<A>\nimport X from 'x'")
