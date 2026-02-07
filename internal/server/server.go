@@ -184,7 +184,8 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	// Parse and validate
 	upstream, err := ParseUpstreamURL(rawUpstream)
 	if err != nil {
-		s.renderError(w, rawUpstream, 400, "bad-request", fmt.Sprintf("Invalid URL: %v", err))
+		slog.Warn("invalid upstream URL", "upstream", rawUpstream, "error", err)
+		s.renderError(w, rawUpstream, 400, "bad-request", "The provided URL is not valid")
 		return
 	}
 
@@ -200,7 +201,8 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	if s.allowlist == nil {
 		private, err := IsPrivateAddress(upstream.Host)
 		if err != nil {
-			s.renderError(w, rawUpstream, 502, "unreachable", fmt.Sprintf("Could not resolve host: %v", err))
+			slog.Warn("DNS resolution failed", "host", upstream.Host, "error", err)
+			s.renderError(w, rawUpstream, 502, "unreachable", "Could not reach the upstream server")
 			return
 		}
 		if private {
@@ -222,8 +224,8 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 				fmt.Sprintf("File too large (limit is %d bytes)", s.cfg.MaxFileSize))
 			return
 		}
-		s.renderError(w, rawUpstream, 502, "unreachable",
-			fmt.Sprintf("Could not reach upstream server: %v", err))
+		slog.Warn("upstream fetch failed", "upstream", rawUpstream, "error", err)
+		s.renderError(w, rawUpstream, 502, "unreachable", "Could not reach the upstream server")
 		return
 	}
 
@@ -377,6 +379,16 @@ func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upst
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("Content-Security-Policy",
+		"default-src 'none'; "+
+			"script-src 'self' 'unsafe-inline'; "+
+			"style-src 'unsafe-inline'; "+
+			"img-src * data:; "+
+			"connect-src *; "+
+			"font-src data:; "+
+			"base-uri 'self'; "+
+			"form-action 'none'; "+
+			"frame-ancestors 'none'")
 
 	w.Header().Set("X-Cooked-Version", version)
 	w.Header().Set("X-Cooked-Upstream", redactUpstream(upstream))

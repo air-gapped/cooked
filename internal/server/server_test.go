@@ -452,6 +452,14 @@ func TestSecurityHeaders(t *testing.T) {
 			t.Errorf("%s = %q, want %q", header, got, want)
 		}
 	}
+
+	csp := resp.Header.Get("Content-Security-Policy")
+	if !strings.Contains(csp, "default-src 'none'") {
+		t.Errorf("CSP missing default-src 'none': %q", csp)
+	}
+	if !strings.Contains(csp, "frame-ancestors 'none'") {
+		t.Errorf("CSP missing frame-ancestors 'none': %q", csp)
+	}
 }
 
 // F-10: Security headers on error responses too
@@ -538,6 +546,56 @@ func TestDocsPageMissingReadme(t *testing.T) {
 
 	if resp.StatusCode != 404 {
 		t.Errorf("status = %d, want 404 when README not embedded", resp.StatusCode)
+	}
+}
+
+// F-04: Error messages must not leak internal details
+func TestErrorMessages_NoInternalDetails(t *testing.T) {
+	s := newTestServer(t, &config.Config{
+		Listen:       ":8080",
+		CacheTTL:     5 * time.Minute,
+		CacheMaxSize: 100 * 1024 * 1024,
+		FetchTimeout: 10 * time.Second,
+		MaxFileSize:  5 * 1024 * 1024,
+		DefaultTheme: "auto",
+		// No AllowedUpstreams — SSRF protection active, DNS lookup will occur
+	})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	tests := []struct {
+		name    string
+		path    string
+		mustNot []string
+	}{
+		{
+			"invalid URL",
+			"/ftp://bad/url",
+			[]string{"dial tcp", "connection refused", "no such host"},
+		},
+		{
+			"unreachable host",
+			"/http://nonexistent.invalid/README.md",
+			[]string{"dial tcp", "connection refused", "lookup nonexistent.invalid"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := http.Get(srv.URL + tc.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			html := string(body)
+
+			for _, forbidden := range tc.mustNot {
+				if strings.Contains(html, forbidden) {
+					t.Errorf("error response leaks internal detail %q", forbidden)
+				}
+			}
+		})
 	}
 }
 
