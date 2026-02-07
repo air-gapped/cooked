@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html"
+	"regexp"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2"
@@ -11,6 +12,9 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 )
+
+// lnPadRe matches chroma line number spans with leading spaces.
+var lnPadRe = regexp.MustCompile(`(<span class="ln">)\s+(\d+</span>)`)
 
 // CodeRenderer renders code files with syntax highlighting.
 type CodeRenderer struct {
@@ -56,6 +60,12 @@ func (r *CodeRenderer) Render(source []byte, language string) ([]byte, error) {
 	if err := r.formatter.Format(&highlighted, styles.Fallback, iterator); err != nil {
 		return nil, fmt.Errorf("format code: %w", err)
 	}
+
+	// Strip leading space-padding from line numbers (chroma pads with spaces
+	// to align to the widest line number, e.g. "  1" for a 100-line file).
+	trimmed := lnPadRe.ReplaceAll(highlighted.Bytes(), []byte("${1}${2}"))
+	highlighted.Reset()
+	highlighted.Write(trimmed)
 
 	// Wrap in SPEC code block structure
 	var buf bytes.Buffer
