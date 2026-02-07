@@ -297,37 +297,50 @@ const layoutCSS = `
       .cooked-code-header { display: none !important; }
       .cooked-copy-btn, .cooked-copy-url, .cooked-copy-md { display: none !important; }
 
-      /* Remove screen layout constraints */
-      main { max-width: 100%; padding: 0; }
+      /* Remove screen layout constraints — !important needed to beat [data-theme] specificity */
+      main { max-width: 100% !important; padding: 0 !important; }
       .markdown-body {
-        max-width: 100%; padding: 0;
-        border: none; border-radius: 0;
-        font-size: 12px;
+        max-width: 100% !important; padding: 0 !important;
+        border: none !important; border-radius: 0 !important;
+        font-size: 12px !important; line-height: 1.4 !important;
       }
 
       /* Scale down headings */
-      .markdown-body h1 { font-size: 1.6em; }
-      .markdown-body h2 { font-size: 1.3em; }
-      .markdown-body h3 { font-size: 1.15em; }
+      .markdown-body h1 { font-size: 1.6em !important; margin: 12px 0 4px !important; }
+      .markdown-body h2 { font-size: 1.3em !important; margin: 10px 0 3px !important; }
+      .markdown-body h3 { font-size: 1.15em !important; margin: 8px 0 3px !important; }
+      .markdown-body h4, .markdown-body h5, .markdown-body h6 { margin: 6px 0 2px !important; }
 
-      /* Code blocks: wrap long lines, shrink font, remove decorative borders */
-      .cooked-code-block { border: 1px solid #ccc; border-radius: 0; }
+      /* Tighten element spacing */
+      .markdown-body p { margin: 4px 0 !important; }
+      .markdown-body ul, .markdown-body ol { margin: 4px 0 !important; padding-left: 20px !important; }
+      .markdown-body li + li { margin-top: 1px !important; }
+      .markdown-body blockquote { margin: 4px 0 !important; padding: 2px 12px !important; }
+      .markdown-body hr { margin: 6px 0 !important; }
+      .markdown-body pre { margin: 4px 0 !important; }
+      .markdown-body .highlight { margin-bottom: 4px !important; }
+
+      /* Code blocks: wrap long lines, shrink font, no scrollbars */
+      .cooked-code-block { border: 1px solid #ccc !important; border-radius: 0 !important; margin: 4px 0 !important; overflow: visible !important; }
+      .cooked-code-block pre { margin: 0 !important; padding: 8px 16px !important; overflow: visible !important; }
+      .cooked-code-block .chroma { margin: 0 !important; padding: 8px 16px !important; overflow: visible !important; }
       .cooked-code-block pre code {
         white-space: pre-wrap !important;
-        word-break: break-all;
-        font-size: 10px !important;
-        padding: 8px !important;
+        word-break: break-all !important;
+        font-size: 9px !important;
+        padding: 0 !important;
+        line-height: 1.3 !important;
+        overflow: visible !important;
       }
 
       /* Constrain images */
-      .markdown-body img { max-width: 100%; max-height: 300px; object-fit: contain; }
+      .markdown-body img { max-width: 100% !important; max-height: 300px !important; object-fit: contain !important; }
 
       /* Force light colors for print (save ink) */
       html { color: #000 !important; background: #fff !important; }
       .markdown-body { color: #000 !important; background: #fff !important; }
 
-      /* Avoid wasteful page breaks */
-      .cooked-code-block { break-inside: avoid; }
+      /* Page break hints */
       h1, h2, h3, h4, h5, h6 { break-after: avoid; }
     }
 
