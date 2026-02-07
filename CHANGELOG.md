@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.5](https://github.com/air-gapped/cooked/compare/v1.0.4...v1.0.5) (2026-02-07)
+
+
+### Bug Fixes
+
+* remove left padding from line numbers to eliminate two-character offset ([66763c1](https://github.com/air-gapped/cooked/commit/66763c1bd87e479cbe1e7256795fe9c1fc8981d2))
+* remove left padding from line numbers to eliminate two-character offset ([4e212e5](https://github.com/air-gapped/cooked/commit/4e212e58e328de6830c7453e83fc38f57b46e1dc)), closes [#11](https://github.com/air-gapped/cooked/issues/11)
+
 ## [1.0.4](https://github.com/air-gapped/cooked/compare/v1.0.3...v1.0.4) (2026-02-07)
 
 
