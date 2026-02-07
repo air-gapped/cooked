@@ -1,0 +1,28 @@
+<h1 id="architecture-overview">Architecture Overview</h1>
+<p>Below is the request flow:</p>
+<pre class="mermaid">graph TD
+    A[Client] --&gt;|HTTP GET| B[cooked proxy]
+    B --&gt; C{Detect type}
+    C --&gt;|Markdown| D[Render MD]
+    C --&gt;|Code| E[Highlight]
+    C --&gt;|Plain| F[Wrap pre]
+    D --&gt; G[Sanitize]
+    E --&gt; G
+    F --&gt; G
+    G --&gt; H[Rewrite URLs]
+    H --&gt; I[Template]
+    I --&gt; J[Response]
+</pre><h2 id="sequence-diagram">Sequence Diagram</h2>
+<pre class="mermaid">sequenceDiagram
+    participant U as User
+    participant C as cooked
+    participant S as Upstream
+    U-&gt;&gt;C: GET /https://example.com/README.md
+    C-&gt;&gt;S: GET https://example.com/README.md
+    S--&gt;&gt;C: 200 OK (markdown content)
+    C--&gt;&gt;U: 200 OK (rendered HTML)
+</pre><p>Regular code blocks should not be treated as mermaid:</p>
+<pre tabindex="0" class="chroma"><code><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;not mermaid&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre><script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad: true});</script>

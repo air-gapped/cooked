@@ -1,0 +1,105 @@
+<h1 id="cooked">cooked</h1>
+<p>A rendering proxy that fetches raw document URLs and serves them as styled,
+self-contained HTML pages.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>Markdown rendering</strong> with GFM support (tables, task lists, strikethrough)</li>
+<li><strong>Syntax highlighting</strong> for 30+ languages via <a href="https://github.com/alecthomas/chroma">Chroma</a></li>
+<li><strong>Mermaid diagrams</strong> rendered client-side</li>
+<li><del>Legacy plaintext mode</del> (replaced by auto-detection)</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Go 1.24+</li>
+<li>Make</li>
+</ul>
+<h3 id="install">Install</h3>
+<pre tabindex="0" class="chroma"><code><span class="line"><span class="cl">git clone https://github.com/example/cooked.git
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> cooked
+</span></span><span class="line"><span class="cl">make build
+</span></span></code></pre><h3 id="run">Run</h3>
+<pre tabindex="0" class="chroma"><code><span class="line"><span class="cl">./cooked --port <span class="m">8080</span>
+</span></span></code></pre><p>Then visit: https://localhost:8080/https://example.com/README.md</p>
+<h2 id="architecture">Architecture</h2>
+<pre class="mermaid">graph LR
+    A[Request] --&gt; B[Fetch]
+    B --&gt; C[Detect]
+    C --&gt; D[Render]
+    D --&gt; E[Sanitize]
+    E --&gt; F[Template]
+</pre><h2 id="configuration">Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Env Var</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--port</code></td>
+<td><code>COOKED_PORT</code></td>
+<td>8080</td>
+<td>HTTP listen port</td>
+</tr>
+<tr>
+<td><code>--timeout</code></td>
+<td><code>COOKED_TIMEOUT</code></td>
+<td>30s</td>
+<td>Upstream fetch timeout</td>
+</tr>
+<tr>
+<td><code>--cache-ttl</code></td>
+<td><code>COOKED_TTL</code></td>
+<td>5m</td>
+<td>Cache duration</td>
+</tr>
+</tbody>
+</table>
+<h2 id="roadmap">Roadmap</h2>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Markdown rendering</li>
+<li><input checked="" disabled="" type="checkbox"> Code highlighting</li>
+<li><input checked="" disabled="" type="checkbox"> Mermaid support</li>
+<li><input disabled="" type="checkbox"> PDF rendering</li>
+<li><input disabled="" type="checkbox"> Image gallery mode</li>
+</ul>
+<h2 id="api">API</h2>
+<h3 id="get-healthz"><code>GET /healthz</code></h3>
+<p>Returns <code>200 OK</code> if the server is healthy.</p>
+<h3 id="get-upstream-url"><code>GET /{upstream_url}</code></h3>
+<p>Fetches and renders the upstream document.</p>
+<p><strong>Response headers:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-Cache</code></td>
+<td><code>HIT</code> or <code>MISS</code></td>
+</tr>
+<tr>
+<td><code>X-Render-Time</code></td>
+<td>Rendering duration</td>
+</tr>
+</tbody>
+</table>
+<h2 id="footnotes">Footnotes</h2>
+<p>The name &ldquo;cooked&rdquo; refers to the idea of &ldquo;cooking&rdquo; raw content<sup id="fnref:1"><a href="#fn:1" class="footnote-ref" role="doc-noteref">1</a></sup>.</p>
+<h2 id="license">License</h2>
+<p>MIT</p>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad: true});</script><div class="footnotes" role="doc-endnotes">
+<hr>
+<ol>
+<li id="fn:1">
+<p>As opposed to serving it &ldquo;raw&rdquo;.&#160;<a href="#fnref:1" class="footnote-backref" role="doc-backlink">&#x21a9;&#xfe0e;</a></p>
+</li>
+</ol>
+</div>
