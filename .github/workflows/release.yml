@@ -73,44 +73,63 @@ jobs:
             dist/checksums.txt
 
   docker:
-    needs: release-please
+    needs: [release-please, build-binaries]
     if: needs.release-please.outputs.release_created
     runs-on: arc-runner-set
     container:
-      image: moby/buildkit:v0.27.1-rootless
-      env:
-        BUILDKITD_FLAGS: --oci-worker-no-process-sandbox
+      image: alpine:3.23
     steps:
-      - uses: actions/checkout@v6
+      - name: Install crane
+        env:
+          CRANE_VERSION: v0.20.7
+        run: |
+          apk add --no-cache curl
+          curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" \
+            | tar xz -C /usr/local/bin crane
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: release-archives
+          path: dist
 
       - name: Build and push to GHCR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
         run: |
+          echo "$GITHUB_TOKEN" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
+
           TAG="${{ needs.release-please.outputs.tag_name }}"
           VERSION="${TAG#v}"
           MAJOR="${VERSION%%.*}"
           MINOR="${VERSION%.*}"
           REPO="ghcr.io/${{ github.repository }}"
           SHA="${{ github.sha }}"
-          DATE="${{ github.event.head_commit.timestamp }}"
 
-          # Configure registry auth for BuildKit
-          mkdir -p "$HOME/.docker"
-          printf '{"auths":{"ghcr.io":{"auth":"%s"}}}' \
-            "$(printf '%s:%s' "$GITHUB_ACTOR" "$GITHUB_TOKEN" | base64 -w 0)" \
-            > "$HOME/.docker/config.json"
+          # Build per-platform images from pre-built binaries
+          for ARCH in amd64 arm64; do
+            mkdir -p staging/usr/local/bin
+            tar xzf "dist/cooked_${TAG}_linux_${ARCH}.tar.gz" -C staging/usr/local/bin
+            chmod +x staging/usr/local/bin/cooked
+            tar cf layer.tar -C staging .
 
-          TAGS="${REPO}:${VERSION},${REPO}:${MINOR},${REPO}:${MAJOR},${REPO}:latest,${REPO}:sha-${SHA:0:7}"
+            DIGEST=$(crane digest --platform "linux/${ARCH}" alpine:3.23)
+            crane append --base "alpine:3.23@${DIGEST}" --new_layer layer.tar -t "${REPO}:${VERSION}-${ARCH}"
+            crane mutate "${REPO}:${VERSION}-${ARCH}" \
+              --entrypoint "cooked,--listen,0.0.0.0:8080" \
+              --workdir /app \
+              -t "${REPO}:${VERSION}-${ARCH}"
 
-          buildctl-daemonless.sh build \
-            --frontend dockerfile.v0 \
-            --local context=. \
-            --local dockerfile=. \
-            --opt platform=linux/amd64,linux/arm64 \
-            --opt "build-arg:LDFLAGS=-X main.version=${TAG} -X main.commit=${SHA} -X main.date=${DATE}" \
-            --output "type=image,\"name=${TAGS}\",push=true"
+            rm -rf staging layer.tar
+          done
+
+          # Assemble multi-arch manifest for each tag
+          for TAG_NAME in "${VERSION}" "${MINOR}" "${MAJOR}" "latest" "sha-${SHA:0:7}"; do
+            crane index append \
+              -t "${REPO}:${TAG_NAME}" \
+              -m "${REPO}:${VERSION}-amd64" \
+              -m "${REPO}:${VERSION}-arm64"
+          done
 
   upload-assets:
     needs: [release-please, build-binaries]
