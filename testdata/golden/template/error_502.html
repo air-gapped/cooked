@@ -75,17 +75,28 @@
       [data-theme="auto"] #cooked-toc li.active > a { color: #58a6ff; }
     }
 
-    .cooked-code-block { position: relative; margin: 16px 0; }
+    .cooked-code-block {
+      position: relative; margin: 16px 0;
+      border: 1px solid #d0d7de; border-radius: 6px; overflow: hidden;
+    }
+    .cooked-code-block pre { margin: 0 !important; border-radius: 0 !important; border: none !important; }
+    .cooked-code-block pre code { padding: 16px !important; display: block; overflow-x: auto; }
     .cooked-code-header {
       display: flex; justify-content: flex-end; align-items: center; gap: 8px;
-      padding: 4px 8px; font-size: 12px; color: #656d76;
-      background: rgba(128,128,128,0.05); border-radius: 6px 6px 0 0;
+      padding: 4px 12px; font-size: 12px; color: #656d76;
+      background: #f6f8fa; border-bottom: 1px solid #d0d7de;
     }
     .cooked-copy-btn {
       background: none; border: 1px solid rgba(128,128,128,0.3); border-radius: 4px;
       cursor: pointer; padding: 2px 8px; font-size: 11px; color: inherit;
     }
-    .cooked-copy-btn:hover { background: rgba(128,128,128,0.1); }
+    .cooked-copy-btn:hover { background: rgba(128,128,128,0.15); }
+    [data-theme="dark"] .cooked-code-block { border-color: #30363d; }
+    [data-theme="dark"] .cooked-code-header { background: #161b22; border-color: #30363d; color: #8b949e; }
+    @media (prefers-color-scheme: dark) {
+      [data-theme="auto"] .cooked-code-block { border-color: #30363d; }
+      [data-theme="auto"] .cooked-code-header { background: #161b22; border-color: #30363d; color: #8b949e; }
+    }
 
     #cooked-error {
       text-align: center; padding: 80px 16px;
