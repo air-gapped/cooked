@@ -1,6 +1,7 @@
 package server
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -128,6 +129,129 @@ func TestIsPrivateAddress_WithPort(t *testing.T) {
 	if !got {
 		t.Error("expected 127.0.0.1:8080 to be private")
 	}
+}
+
+func FuzzParseUpstreamURL(f *testing.F) {
+	// Seed corpus: valid URLs, edge cases
+	seeds := []string{
+		"https://example.com/README.md",
+		"http://cgit.internal/repo/plain/file.md",
+		"https://s3.internal/bucket/path/file.md?X-Amz-Signature=abc",
+		"",
+		"ftp://example.com/file",
+		"file:///etc/passwd",
+		"example.com/file.md",
+		"https://",
+		"http://",
+		"https://host",
+		"https://host:8080/path",
+		"https://user:pass@host/path",
+		"https://例え.jp/日本語.md",
+		"https://host/" + string(make([]byte, 8192)),
+		"://missing-scheme",
+		"https://host/path?q=1&r=2#frag",
+		"HTTPS://EXAMPLE.COM/FILE.MD",
+	}
+	for _, s := range seeds {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		u, err := ParseUpstreamURL(input)
+		if err != nil {
+			return
+		}
+		// If parsing succeeded, the URL must have a valid scheme and host
+		if u.Scheme != "http" && u.Scheme != "https" {
+			t.Errorf("accepted non-http(s) scheme: %q", u.Scheme)
+		}
+		if u.Host == "" {
+			t.Error("accepted URL with empty host")
+		}
+	})
+}
+
+func FuzzCheckAllowedUpstream(f *testing.F) {
+	seeds := []struct {
+		host    string
+		allowed string
+	}{
+		{"example.com", ""},
+		{"cgit.internal", "cgit.internal"},
+		{"s3.internal", "cgit.internal,s3.internal"},
+		{"evil.com", "cgit.internal,s3.internal"},
+		{"cgit.internal:8080", "cgit.internal"},
+		{"", ""},
+		{"", "example.com"},
+		{"host", " host , other "},
+		{"例え.jp", "例え.jp"},
+		{"a.b.c.d.e", "a.b,c.d"},
+	}
+	for _, s := range seeds {
+		f.Add(s.host, s.allowed)
+	}
+
+	f.Fuzz(func(t *testing.T, host, allowed string) {
+		// Must never panic
+		got := CheckAllowedUpstream(host, allowed)
+
+		// If allowed list is empty, everything should be allowed
+		if allowed == "" && !got {
+			t.Error("empty allowed list should allow all hosts")
+		}
+	})
+}
+
+func FuzzExtractUpstreamFromPath(f *testing.F) {
+	seeds := []struct {
+		path  string
+		query string
+	}{
+		{"/https://example.com/file.md", ""},
+		{"/https://s3.internal/file.md", "X-Amz-Signature=abc"},
+		{"/http://server/doc.md", ""},
+		{"/http:/server/doc.md", ""},
+		{"/https:/server/doc.md", ""},
+		{"", ""},
+		{"/", ""},
+		{"/plainpath", "key=val"},
+		{"/https://例え.jp/日本語.md", ""},
+		{"/http://host/" + string(make([]byte, 4096)), ""},
+	}
+	for _, s := range seeds {
+		f.Add(s.path, s.query)
+	}
+
+	f.Fuzz(func(t *testing.T, path, query string) {
+		result := ExtractUpstreamFromPath(path, query)
+
+		// Determinism: same inputs must produce same output
+		result2 := ExtractUpstreamFromPath(path, query)
+		if result != result2 {
+			t.Errorf("non-deterministic: %q vs %q", result, result2)
+		}
+
+		// If query is non-empty, result must end with "?<query>"
+		if query != "" {
+			want := "?" + query
+			if !strings.HasSuffix(result, want) {
+				t.Errorf("result %q does not end with query %q", result, want)
+			}
+		}
+
+		// Result should not have the leading slash from the request path
+		// (only the first "/" is stripped, so "//" → "/" is correct)
+		trimmed := strings.TrimPrefix(path, "/")
+		if query == "" && result != trimmed {
+			// Without scheme-fix, result should equal path minus leading "/"
+			// But scheme-fix changes "http:/" to "http://", so skip that case
+			if !strings.HasPrefix(trimmed, "http:/") && !strings.HasPrefix(trimmed, "https:/") {
+				if result != trimmed {
+					t.Errorf("unexpected result %q from path %q (expected %q)", result, path, trimmed)
+				}
+			}
+		}
+	})
 }
 
 func TestExtractUpstreamFromPath(t *testing.T) {
