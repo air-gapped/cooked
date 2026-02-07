@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.6](https://github.com/air-gapped/cooked/compare/v1.0.5...v1.0.6) (2026-02-07)
+
+
+### Bug Fixes
+
+* eliminate two-character offset on first line ([6bd172d](https://github.com/air-gapped/cooked/commit/6bd172d0cd7238ca58d3447c5e1a0b75498deccc))
+* eliminate two-character offset on first line by disabling chroma line number padding ([c0231a6](https://github.com/air-gapped/cooked/commit/c0231a63598c13b37ec2a3f628a3d90defea1d22)), closes [#11](https://github.com/air-gapped/cooked/issues/11)
+* remove non-existent WithLineNumberPad chroma option ([c09d01c](https://github.com/air-gapped/cooked/commit/c09d01c1df9caf7c382cc3bd7e2bcd4a8975bb92))
+
 ## [1.0.5](https://github.com/air-gapped/cooked/compare/v1.0.4...v1.0.5) (2026-02-07)
 
 
