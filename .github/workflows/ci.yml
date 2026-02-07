@@ -20,7 +20,7 @@ jobs:
       - name: Install lint tools
         run: |
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-          go install github.com/zricethezav/gitleaks/v8@latest
+          go install github.com/zricethezav/gitleaks/v8@v8.29.1
 
       - name: Download embedded assets
         run: make deps
