@@ -34,10 +34,21 @@ func writeScripts(buf *bytes.Buffer) {
         }
       }
 
+      var icons = { auto: '\u25D1', light: '\u2600', dark: '\u263E' };
+      var labels = { auto: 'Auto', light: 'Light', dark: 'Dark' };
+
+      function updateButton() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'auto';
+        toggle.textContent = icons[theme] || icons.auto;
+        toggle.title = 'Theme: ' + (labels[theme] || 'Auto');
+      }
+      updateButton();
+
       toggle.addEventListener('click', function() {
         var current = document.documentElement.getAttribute('data-theme');
         var next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
         setTheme(next);
+        updateButton();
       });
     })();
 
