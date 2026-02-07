@@ -73,63 +73,41 @@ jobs:
             dist/checksums.txt
 
   docker:
-    needs: [release-please, build-binaries]
+    needs: release-please
     if: needs.release-please.outputs.release_created
     runs-on: arc-runner-set
     container:
-      image: alpine:3.23
+      image: gcr.io/kaniko-project/executor:v1.24.0-debug
     steps:
-      - name: Install crane
-        env:
-          CRANE_VERSION: v0.20.7
-        run: |
-          apk add --no-cache curl
-          curl -fsSL "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz" \
-            | tar xz -C /usr/local/bin crane
-
-      - name: Download binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: release-archives
-          path: dist
-
       - name: Build and push to GHCR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_USERNAME: ${{ github.actor }}
+          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "$GITHUB_TOKEN" | crane auth login ghcr.io -u "${{ github.actor }}" --password-stdin
-
           TAG="${{ needs.release-please.outputs.tag_name }}"
           VERSION="${TAG#v}"
           MAJOR="${VERSION%%.*}"
           MINOR="${VERSION%.*}"
           REPO="ghcr.io/${{ github.repository }}"
           SHA="${{ github.sha }}"
+          DATE="${{ github.event.head_commit.timestamp }}"
 
-          # Build per-platform images from pre-built binaries
-          for ARCH in amd64 arm64; do
-            mkdir -p staging/usr/local/bin
-            tar xzf "dist/cooked_${TAG}_linux_${ARCH}.tar.gz" -C staging/usr/local/bin
-            chmod +x staging/usr/local/bin/cooked
-            tar cf layer.tar -C staging .
+          # Configure GHCR registry auth
+          AUTH=$(echo -n "${{ github.actor }}:${GITHUB_TOKEN}" | base64 | tr -d '\n')
+          mkdir -p /kaniko/.docker
+          printf '{"auths":{"ghcr.io":{"auth":"%s"}}}' "$AUTH" > /kaniko/.docker/config.json
 
-            DIGEST=$(crane digest --platform "linux/${ARCH}" alpine:3.23)
-            crane append --base "alpine:3.23@${DIGEST}" --new_layer layer.tar -t "${REPO}:${VERSION}-${ARCH}"
-            crane mutate "${REPO}:${VERSION}-${ARCH}" \
-              --entrypoint "cooked,--listen,0.0.0.0:8080" \
-              --workdir /app \
-              -t "${REPO}:${VERSION}-${ARCH}"
-
-            rm -rf staging layer.tar
-          done
-
-          # Assemble multi-arch manifest for each tag
-          for TAG_NAME in "${VERSION}" "${MINOR}" "${MAJOR}" "latest" "sha-${SHA:0:7}"; do
-            crane index append \
-              -t "${REPO}:${TAG_NAME}" \
-              -m "${REPO}:${VERSION}-amd64" \
-              -m "${REPO}:${VERSION}-arm64"
-          done
+          /kaniko/executor \
+            --context="${{ github.server_url }}/${{ github.repository }}.git#${{ github.sha }}" \
+            --dockerfile=Dockerfile \
+            --build-arg="LDFLAGS=-X main.version=${TAG} -X main.commit=${SHA} -X main.date=${DATE}" \
+            --destination="${REPO}:${VERSION}" \
+            --destination="${REPO}:${MINOR}" \
+            --destination="${REPO}:${MAJOR}" \
+            --destination="${REPO}:latest" \
+            --destination="${REPO}:sha-${SHA:0:7}" \
+            --push-retry=3
 
   upload-assets:
     needs: [release-please, build-binaries]
