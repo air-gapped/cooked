@@ -94,6 +94,17 @@ func TestIsPrivateAddress_WithPort(t *testing.T) {
 	}
 }
 
+func TestIsPrivateAddress_DNSError(t *testing.T) {
+	// An unresolvable hostname should return an error from net.LookupIP.
+	_, err := IsPrivateAddress("host.invalid.")
+	if err == nil {
+		t.Fatal("expected error for unresolvable hostname, got nil")
+	}
+	if !strings.Contains(err.Error(), "resolve host") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "resolve host")
+	}
+}
+
 func FuzzParseUpstreamURL(f *testing.F) {
 	// Seed corpus: valid URLs, edge cases
 	seeds := []string{

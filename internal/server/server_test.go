@@ -343,17 +343,35 @@ func TestEmbeddedAsset(t *testing.T) {
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/_cooked/mermaid.min.js")
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name       string
+		path       string
+		wantStatus int
+		wantType   string
+	}{
+		{"javascript", "/_cooked/mermaid.min.js", 200, "application/javascript"},
+		{"css light", "/_cooked/github-markdown-light.css", 200, "text/css"},
+		{"css dark", "/_cooked/github-markdown-dark.css", 200, "text/css"},
+		{"not found", "/_cooked/nonexistent.txt", 404, ""},
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		t.Errorf("status = %d, want 200", resp.StatusCode)
-	}
-	if got := resp.Header.Get("Content-Type"); got != "application/javascript" {
-		t.Errorf("Content-Type = %q, want application/javascript", got)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := http.Get(srv.URL + tc.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tc.wantStatus {
+				t.Errorf("status = %d, want %d", resp.StatusCode, tc.wantStatus)
+			}
+			if tc.wantType != "" {
+				if got := resp.Header.Get("Content-Type"); got != tc.wantType {
+					t.Errorf("Content-Type = %q, want %q", got, tc.wantType)
+				}
+			}
+		})
 	}
 }
 

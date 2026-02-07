@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/air-gapped/cooked/internal/render"
 )
@@ -301,36 +302,122 @@ func TestRenderError_NoExternalRequests(t *testing.T) {
 
 func TestFormatFileSize(t *testing.T) {
 	tests := []struct {
+		name  string
 		bytes int64
 		want  string
 	}{
-		{500, "500 B"},
-		{1024, "1.0 KB"},
-		{14832, "14.5 KB"},
-		{1048576, "1.0 MB"},
-		{5242880, "5.0 MB"},
+		{"zero", 0, "0 B"},
+		{"one byte", 1, "1 B"},
+		{"small", 500, "500 B"},
+		{"just under 1KB", 1023, "1023 B"},
+		{"exactly 1KB", 1024, "1.0 KB"},
+		{"mid KB", 14832, "14.5 KB"},
+		{"just under 1MB", 1048575, "1024.0 KB"},
+		{"exactly 1MB", 1048576, "1.0 MB"},
+		{"large MB", 5242880, "5.0 MB"},
 	}
 
 	for _, tc := range tests {
-		got := formatFileSize(tc.bytes)
-		if got != tc.want {
-			t.Errorf("formatFileSize(%d) = %q, want %q", tc.bytes, got, tc.want)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			got := formatFileSize(tc.bytes)
+			if got != tc.want {
+				t.Errorf("formatFileSize(%d) = %q, want %q", tc.bytes, got, tc.want)
+			}
+		})
 	}
 }
 
 func TestTruncateURL(t *testing.T) {
-	short := "https://example.com/file.md"
-	if truncateURL(short, 80) != short {
-		t.Error("short URL should not be truncated")
+	tests := []struct {
+		name   string
+		url    string
+		maxLen int
+		want   string
+	}{
+		{"short unchanged", "https://example.com/file.md", 80, "https://example.com/file.md"},
+		{"exact length", "abcde", 5, "abcde"},
+		{"one over", "abcdef", 5, "ab..."},
+		{"long URL", strings.Repeat("a", 100), 80, strings.Repeat("a", 77) + "..."},
 	}
 
-	long := strings.Repeat("a", 100)
-	got := truncateURL(long, 80)
-	if len(got) != 80 {
-		t.Errorf("truncated length = %d, want 80", len(got))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := truncateURL(tc.url, tc.maxLen)
+			if got != tc.want {
+				t.Errorf("truncateURL(%q, %d) = %q, want %q", tc.url, tc.maxLen, got, tc.want)
+			}
+		})
 	}
-	if !strings.HasSuffix(got, "...") {
-		t.Error("truncated URL should end with ...")
+}
+
+func TestFormatRelativeTime(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		name string
+		time string
+		want string
+	}{
+		{"just now", now.Add(-10 * time.Second).Format(time.RFC3339), "just now"},
+		{"1 minute ago", now.Add(-1 * time.Minute).Format(time.RFC3339), "1 minute ago"},
+		{"5 minutes ago", now.Add(-5 * time.Minute).Format(time.RFC3339), "5 minutes ago"},
+		{"1 hour ago", now.Add(-1 * time.Hour).Format(time.RFC3339), "1 hour ago"},
+		{"3 hours ago", now.Add(-3 * time.Hour).Format(time.RFC3339), "3 hours ago"},
+		{"1 day ago", now.Add(-25 * time.Hour).Format(time.RFC3339), "1 day ago"},
+		{"3 days ago", now.Add(-73 * time.Hour).Format(time.RFC3339), "3 days ago"},
+		{"RFC1123 format", now.Add(-2 * time.Hour).Format(time.RFC1123), "2 hours ago"},
+		{"unparseable returns input", "not-a-date", "not-a-date"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := formatRelativeTime(tc.time)
+			if got != tc.want {
+				t.Errorf("formatRelativeTime(%q) = %q, want %q", tc.time, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestPrefixThemeCSS(t *testing.T) {
+	tests := []struct {
+		name     string
+		css      string
+		selector string
+		want     string
+	}{
+		{
+			"single rule",
+			".markdown-body { color: red; }",
+			`[data-theme="light"]`,
+			`[data-theme="light"] .markdown-body { color: red; }`,
+		},
+		{
+			"multiple occurrences",
+			".markdown-body hr { border: 0; }\n.markdown-body h1 { font-size: 2em; }",
+			`[data-theme="dark"]`,
+			"[data-theme=\"dark\"] .markdown-body hr { border: 0; }\n[data-theme=\"dark\"] .markdown-body h1 { font-size: 2em; }",
+		},
+		{
+			"no markdown-body",
+			"body { margin: 0; }",
+			`[data-theme="light"]`,
+			"body { margin: 0; }",
+		},
+		{
+			"empty CSS",
+			"",
+			`[data-theme="auto"]`,
+			"",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := prefixThemeCSS(tc.css, tc.selector)
+			if got != tc.want {
+				t.Errorf("prefixThemeCSS() = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

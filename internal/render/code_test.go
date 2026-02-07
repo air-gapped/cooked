@@ -57,6 +57,47 @@ func TestCodeRenderer_UnknownLanguage(t *testing.T) {
 	}
 }
 
+func TestCodeRenderer_NoTrailingNewline(t *testing.T) {
+	r := NewCodeRenderer()
+	source := []byte("line1\nline2")
+	html, err := r.Render(source, "text")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(html), `data-line-count="2"`) {
+		t.Error("expected 2 lines for input without trailing newline")
+	}
+}
+
+func TestCodeRenderer_LineCount(t *testing.T) {
+	r := NewCodeRenderer()
+
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"single line no newline", "hello", `data-line-count="1"`},
+		{"single line with newline", "hello\n", `data-line-count="1"`},
+		{"two lines with newline", "a\nb\n", `data-line-count="2"`},
+		{"two lines no trailing newline", "a\nb", `data-line-count="2"`},
+		{"empty", "", `data-line-count="0"`},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			html, err := r.Render([]byte(tc.input), "text")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(html), tc.want) {
+				t.Errorf("got %s, want %s in output", string(html), tc.want)
+			}
+		})
+	}
+}
+
 func TestRenderPlaintext(t *testing.T) {
 	source := []byte("Hello <world> & \"stuff\"")
 	html := RenderPlaintext(source)
