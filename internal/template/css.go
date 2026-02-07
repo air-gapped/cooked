@@ -13,8 +13,8 @@ const faviconSVG = `%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 1
 const chromaLight = `
 /* chroma light */
 .chroma { background-color: #f8f8f8; }
-.chroma .ln { color: #7f7f7f; margin-right: 0.4em; padding: 0 0.4em 0 0; }
-.chroma .lnt { color: #7f7f7f; margin-right: 0.4em; padding: 0 0.4em 0 0; }
+.chroma .ln { color: #7f7f7f; margin-right: 0.4em; padding: 0 0.4em 0 0; text-align: right; display: inline-block; }
+.chroma .lnt { color: #7f7f7f; margin-right: 0.4em; padding: 0 0.4em 0 0; text-align: right; display: inline-block; }
 .chroma .hl { background-color: #ffffcc; display: block; }
 .chroma .lnlinks { outline: none; text-decoration: none; color: inherit; }
 .chroma .err { color: #a61717; background-color: #e3d2d2; }
@@ -74,8 +74,8 @@ const chromaLight = `
 const chromaDark = `
 /* chroma dark */
 .chroma { background-color: #1e1e1e; color: #d4d4d4; }
-.chroma .ln { color: #6e7681; margin-right: 0.4em; padding: 0 0.4em 0 0; }
-.chroma .lnt { color: #6e7681; margin-right: 0.4em; padding: 0 0.4em 0 0; }
+.chroma .ln { color: #6e7681; margin-right: 0.4em; padding: 0 0.4em 0 0; text-align: right; display: inline-block; }
+.chroma .lnt { color: #6e7681; margin-right: 0.4em; padding: 0 0.4em 0 0; text-align: right; display: inline-block; }
 .chroma .hl { background-color: #2a2a2a; display: block; }
 .chroma .err { color: #f44747; }
 .chroma .k { color: #569cd6; }
