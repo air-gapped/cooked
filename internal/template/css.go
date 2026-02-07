@@ -3,6 +3,7 @@ package template
 import (
 	"bytes"
 	"fmt"
+	"strings"
 )
 
 // faviconSVG is an inline SVG favicon — a simple cooking pot icon.
@@ -133,39 +134,31 @@ func writeThemeCSS(buf *bytes.Buffer, lightCSS, darkCSS, chromaLightCSS, chromaD
 	// Light theme
 	fmt.Fprintf(buf, "    /* Theme: light */\n")
 	fmt.Fprintf(buf, "    [data-theme=\"light\"] { color-scheme: light; }\n")
-	fmt.Fprintf(buf, "    [data-theme=\"light\"] .markdown-body {\n")
-	fmt.Fprintf(buf, "      color: #1f2328; background-color: #ffffff;\n    }\n")
 	if lightCSS != "" {
-		fmt.Fprintf(buf, "    [data-theme=\"light\"] .markdown-body {\n%s\n    }\n", indentCSS(lightCSS))
+		buf.WriteString(prefixThemeCSS(lightCSS, `[data-theme="light"]`))
 	}
 	fmt.Fprintf(buf, "    [data-theme=\"light\"] %s\n", chromaLightCSS)
 
 	// Dark theme
 	fmt.Fprintf(buf, "    /* Theme: dark */\n")
 	fmt.Fprintf(buf, "    [data-theme=\"dark\"] { color-scheme: dark; }\n")
-	fmt.Fprintf(buf, "    [data-theme=\"dark\"] .markdown-body {\n")
-	fmt.Fprintf(buf, "      color: #e6edf3; background-color: #0d1117;\n    }\n")
 	if darkCSS != "" {
-		fmt.Fprintf(buf, "    [data-theme=\"dark\"] .markdown-body {\n%s\n    }\n", indentCSS(darkCSS))
+		buf.WriteString(prefixThemeCSS(darkCSS, `[data-theme="dark"]`))
 	}
 	fmt.Fprintf(buf, "    [data-theme=\"dark\"] %s\n", chromaDarkCSS)
 
 	// Auto theme (system preference)
 	fmt.Fprintf(buf, "    /* Theme: auto (system preference) */\n")
 	fmt.Fprintf(buf, "    [data-theme=\"auto\"] { color-scheme: light dark; }\n")
-	fmt.Fprintf(buf, "    [data-theme=\"auto\"] .markdown-body {\n")
-	fmt.Fprintf(buf, "      color: #1f2328; background-color: #ffffff;\n    }\n")
 	if lightCSS != "" {
-		fmt.Fprintf(buf, "    [data-theme=\"auto\"] .markdown-body {\n%s\n    }\n", indentCSS(lightCSS))
+		buf.WriteString(prefixThemeCSS(lightCSS, `[data-theme="auto"]`))
 	}
 	fmt.Fprintf(buf, "    [data-theme=\"auto\"] %s\n", chromaLightCSS)
 
 	fmt.Fprintf(buf, "    @media (prefers-color-scheme: dark) {\n")
 	fmt.Fprintf(buf, "      [data-theme=\"auto\"] { color-scheme: dark; }\n")
-	fmt.Fprintf(buf, "      [data-theme=\"auto\"] .markdown-body {\n")
-	fmt.Fprintf(buf, "        color: #e6edf3; background-color: #0d1117;\n      }\n")
 	if darkCSS != "" {
-		fmt.Fprintf(buf, "      [data-theme=\"auto\"] .markdown-body {\n%s\n      }\n", indentCSS(darkCSS))
+		buf.WriteString(prefixThemeCSS(darkCSS, `[data-theme="auto"]`))
 	}
 	fmt.Fprintf(buf, "      [data-theme=\"auto\"] %s\n", chromaDarkCSS)
 	fmt.Fprintf(buf, "    }\n")
@@ -175,9 +168,16 @@ func writeLayoutCSS(buf *bytes.Buffer) {
 	buf.WriteString(layoutCSS)
 }
 
-func indentCSS(css string) string {
-	// Simple pass-through — CSS is already formatted
-	return css
+// prefixThemeCSS prepends a theme selector before each .markdown-body selector
+// in the embedded github-markdown CSS. The CSS files use .markdown-body as the
+// root selector for every rule, so we prefix each occurrence to scope rules to
+// the active theme (e.g. [data-theme="light"] .markdown-body hr { ... }).
+//
+// This avoids wrapping the CSS in a block like [data-theme] .markdown-body { ... }
+// which would cause CSS nesting and produce broken double selectors like
+// [data-theme] .markdown-body .markdown-body hr that never match the DOM.
+func prefixThemeCSS(css, themeSelector string) string {
+	return strings.ReplaceAll(css, ".markdown-body", themeSelector+" .markdown-body")
 }
 
 const layoutCSS = `
@@ -222,15 +222,6 @@ const layoutCSS = `
     @media (prefers-color-scheme: dark) {
       [data-theme="auto"] .markdown-body { border-color: #30363d; }
     }
-    .markdown-body hr {
-      height: 4px; padding: 0; margin: 24px 0;
-      background-color: #d0d7de; border: 0; border-radius: 2px;
-    }
-    [data-theme="dark"] .markdown-body hr { background-color: #30363d; }
-    @media (prefers-color-scheme: dark) {
-      [data-theme="auto"] .markdown-body hr { background-color: #30363d; }
-    }
-
     #cooked-toc {
       position: fixed; top: 32px; left: 0; bottom: 0; width: 280px;
       overflow-y: auto; padding: 16px; font-size: 13px;
