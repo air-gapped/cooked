@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -168,25 +167,5 @@ func TestByteCountingWriter_DefaultStatus(t *testing.T) {
 	w.Write([]byte("hi"))
 	if w.StatusCode != 200 {
 		t.Errorf("StatusCode = %d, want 200 (default)", w.StatusCode)
-	}
-}
-
-func TestMiddleware(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Write([]byte("ok"))
-	})
-
-	srv := httptest.NewServer(Middleware(handler))
-	defer srv.Close()
-
-	resp, err := http.Get(srv.URL + "/test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		t.Errorf("status = %d, want 200", resp.StatusCode)
 	}
 }

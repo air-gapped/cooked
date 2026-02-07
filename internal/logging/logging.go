@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 )
 
 // Setup initializes the default slog logger with JSON output to stdout.
@@ -92,25 +91,4 @@ func (w *ByteCountingWriter) Write(b []byte) (int, error) {
 	n, err := w.ResponseWriter.Write(b)
 	w.Bytes += int64(n)
 	return n, err
-}
-
-// Middleware returns an HTTP middleware that logs requests with timing.
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		wrapped := &ByteCountingWriter{ResponseWriter: w}
-		next.ServeHTTP(wrapped, r)
-
-		if wrapped.StatusCode == 0 {
-			wrapped.StatusCode = 200
-		}
-
-		slog.Info("request",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"status", wrapped.StatusCode,
-			"bytes", wrapped.Bytes,
-			"total_ms", time.Since(start).Milliseconds(),
-		)
-	})
 }

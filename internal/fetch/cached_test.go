@@ -131,3 +131,46 @@ func TestCachedClient_Revalidation304(t *testing.T) {
 		t.Errorf("cached HTML = %q", string(entry.HTML))
 	}
 }
+
+func TestCachedClient_RevalidationError_ServesStale(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("content"))
+	}))
+
+	c := NewClient(10*time.Second, 5*1024*1024, false)
+	memCache := cache.New(1*time.Millisecond, 100*1024*1024) // very short TTL
+	cc := NewCachedClient(c, memCache)
+
+	url := upstream.URL + "/file.md"
+
+	// Store with ETag
+	cc.Store(url, cache.Entry{
+		HTML: []byte("<p>stale</p>"),
+		Size: 12,
+		ETag: `"etag1"`,
+	})
+
+	// Wait for TTL to expire
+	time.Sleep(5 * time.Millisecond)
+
+	// Shut down upstream so revalidation fails
+	upstream.Close()
+
+	// Fetch — should serve stale content
+	result, entry, err := cc.Fetch(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.CacheStatus != cache.StatusStale {
+		t.Errorf("CacheStatus = %q, want stale", result.CacheStatus)
+	}
+	if entry == nil {
+		t.Fatal("entry should not be nil when serving stale")
+	}
+	if string(entry.HTML) != "<p>stale</p>" {
+		t.Errorf("cached HTML = %q, want <p>stale</p>", string(entry.HTML))
+	}
+	if result.FetchMs != 0 {
+		t.Errorf("FetchMs = %d, want 0 for stale serve", result.FetchMs)
+	}
+}

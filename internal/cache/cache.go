@@ -14,6 +14,7 @@ const (
 	StatusMiss        Status = "miss"
 	StatusRevalidated Status = "revalidated"
 	StatusExpired     Status = "expired"
+	StatusStale       Status = "stale" // served expired entry because revalidation failed
 )
 
 // Entry holds a cached rendered page.

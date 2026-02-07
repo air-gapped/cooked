@@ -6,11 +6,13 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/air-gapped/cooked/internal/cache"
 	"github.com/air-gapped/cooked/internal/config"
 	"github.com/air-gapped/cooked/internal/fetch"
+	"github.com/air-gapped/cooked/internal/logging"
 	"github.com/air-gapped/cooked/internal/render"
 	"github.com/air-gapped/cooked/internal/rewrite"
 	"github.com/air-gapped/cooked/internal/sanitize"
@@ -144,7 +146,7 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If cache hit, serve from cache
-	if cachedEntry != nil && result.CacheStatus == cache.StatusHit || result.CacheStatus == cache.StatusRevalidated {
+	if cachedEntry != nil && (result.CacheStatus == cache.StatusHit || result.CacheStatus == cache.StatusRevalidated || result.CacheStatus == cache.StatusStale) {
 		s.serveFromCache(w, rawUpstream, cachedEntry, result, start)
 		return
 	}
@@ -301,41 +303,31 @@ func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upst
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		wrapped := &responseCapture{ResponseWriter: w}
+		wrapped := &logging.ByteCountingWriter{ResponseWriter: w}
 		next.ServeHTTP(wrapped, r)
 
-		if wrapped.statusCode == 0 {
-			wrapped.statusCode = 200
+		if wrapped.StatusCode == 0 {
+			wrapped.StatusCode = 200
 		}
 
-		slog.Info("request",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"status", wrapped.statusCode,
-			"bytes", wrapped.bytes,
-			"total_ms", time.Since(start).Milliseconds(),
-		)
+		logging.LogRequest(slog.Default(), logging.RequestFields{
+			Method:      r.Method,
+			Path:        r.URL.Path,
+			Upstream:    wrapped.Header().Get("X-Cooked-Upstream"),
+			Status:      wrapped.StatusCode,
+			Cache:       wrapped.Header().Get("X-Cooked-Cache"),
+			UpstreamMs:  parseHeaderInt64(wrapped.Header().Get("X-Cooked-Upstream-Ms")),
+			RenderMs:    parseHeaderInt64(wrapped.Header().Get("X-Cooked-Render-Ms")),
+			TotalMs:     time.Since(start).Milliseconds(),
+			ContentType: wrapped.Header().Get("X-Cooked-Content-Type"),
+			Bytes:       wrapped.Bytes,
+		})
 	})
 }
 
-type responseCapture struct {
-	http.ResponseWriter
-	statusCode int
-	bytes      int64
-}
-
-func (w *responseCapture) WriteHeader(code int) {
-	w.statusCode = code
-	w.ResponseWriter.WriteHeader(code)
-}
-
-func (w *responseCapture) Write(b []byte) (int, error) {
-	if w.statusCode == 0 {
-		w.statusCode = 200
-	}
-	n, err := w.ResponseWriter.Write(b)
-	w.bytes += int64(n)
-	return n, err
+func parseHeaderInt64(s string) int64 {
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
 }
 
 func readAssetString(fsys fs.FS, name string) string {

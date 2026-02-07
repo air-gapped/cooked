@@ -45,7 +45,7 @@ func (cc *CachedClient) Fetch(rawURL string) (*CachedResult, *cache.Entry, error
 			// On error, serve stale cache
 			return &CachedResult{
 				Result:      &Result{StatusCode: 200, FetchMs: 0},
-				CacheStatus: cache.StatusHit,
+				CacheStatus: cache.StatusStale,
 			}, entry, nil
 		}
 
