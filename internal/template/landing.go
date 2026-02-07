@@ -44,7 +44,10 @@ func (r *Renderer) RenderLanding(version, defaultTheme string) []byte {
       cursor: pointer;
     }
     .cooked-landing-form button:hover { background: #0860ca; }
+    .cooked-docs-link { color: #0969da; text-decoration: none; }
+    .cooked-docs-link:hover { text-decoration: underline; }
     [data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+    [data-theme="dark"] .cooked-docs-link { color: #58a6ff; }
     [data-theme="dark"] .cooked-landing p { color: #8b949e; }
     [data-theme="dark"] .cooked-landing-form input {
       border-color: rgba(128,128,128,0.3); background: #161b22; color: #e6edf3;
@@ -55,6 +58,7 @@ func (r *Renderer) RenderLanding(version, defaultTheme string) []byte {
       [data-theme="auto"] .cooked-landing-form input {
         border-color: rgba(128,128,128,0.3); background: #161b22; color: #e6edf3;
       }
+      [data-theme="auto"] .cooked-docs-link { color: #58a6ff; }
     }
   </style>
 </head>
@@ -67,7 +71,7 @@ func (r *Renderer) RenderLanding(version, defaultTheme string) []byte {
       <button type="submit">Cook it</button>
     </form>
     <p style="margin-top:16px;font-size:13px;">
-      cooked ` + html.EscapeString(version) + `
+      cooked ` + html.EscapeString(version) + ` · <a class="cooked-docs-link" href="/_cooked/docs">Documentation</a>
     </p>
   </div>
   <!-- cooked: scripts -->

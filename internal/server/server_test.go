@@ -75,6 +75,9 @@ func TestLandingPage(t *testing.T) {
 	if !strings.Contains(string(body), "cooked") {
 		t.Error("landing page missing 'cooked' text")
 	}
+	if !strings.Contains(string(body), `href="/_cooked/docs"`) {
+		t.Error("landing page missing docs link")
+	}
 }
 
 func TestRenderMarkdown(t *testing.T) {
@@ -469,6 +472,75 @@ func TestSecurityHeaders_ErrorResponse(t *testing.T) {
 }
 
 // F-09: Redact upstream URLs — query params stripped from header
+func TestDocsPage(t *testing.T) {
+	cfg := &config.Config{
+		Listen:           ":8080",
+		CacheTTL:         5 * time.Minute,
+		CacheMaxSize:     100 * 1024 * 1024,
+		FetchTimeout:     10 * time.Second,
+		MaxFileSize:      5 * 1024 * 1024,
+		DefaultTheme:     "auto",
+		AllowedUpstreams: "127.0.0.0/8",
+	}
+
+	assets := fstest.MapFS{
+		"mermaid.min.js":            {Data: []byte("// mermaid mock")},
+		"github-markdown-light.css": {Data: []byte("/* light */")},
+		"github-markdown-dark.css":  {Data: []byte("/* dark */")},
+		"project-readme.md":         {Data: []byte("# Project Docs\n\nWelcome to cooked.\n")},
+	}
+
+	s := New(cfg, "v0.1.0-test", assets)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/_cooked/docs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+
+	ct := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/html") {
+		t.Errorf("Content-Type = %q, want text/html", ct)
+	}
+
+	cc := resp.Header.Get("Cache-Control")
+	if cc != "public, max-age=86400" {
+		t.Errorf("Cache-Control = %q, want 'public, max-age=86400'", cc)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	html := string(body)
+
+	if !strings.Contains(html, "Project Docs") {
+		t.Error("docs page missing rendered content 'Project Docs'")
+	}
+	if !strings.Contains(html, "Welcome to cooked") {
+		t.Error("docs page missing rendered content 'Welcome to cooked'")
+	}
+}
+
+func TestDocsPageMissingReadme(t *testing.T) {
+	s := newTestServer(t, nil) // no project-readme.md in test assets
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/_cooked/docs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 404 {
+		t.Errorf("status = %d, want 404 when README not embedded", resp.StatusCode)
+	}
+}
+
 func TestUpstreamURLRedaction(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("# Test\n"))

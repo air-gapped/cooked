@@ -31,6 +31,7 @@ type Server struct {
 	assets     fs.FS
 	allowlist  *Allowlist
 	mux        *http.ServeMux
+	readmePage []byte // pre-rendered docs page (nil if README not embedded)
 }
 
 // New creates a new cooked server with all dependencies.
@@ -75,12 +76,14 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 		mux:        http.NewServeMux(),
 	}
 
+	s.preRenderDocs()
 	s.routes()
 	return s
 }
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
+	s.mux.HandleFunc("GET /_cooked/docs", s.handleDocs)
 	s.mux.HandleFunc("GET /_cooked/{path...}", s.handleAsset)
 	s.mux.HandleFunc("GET /{$}", s.handleLanding)
 	s.mux.HandleFunc("GET /{upstream...}", s.handleRender)
@@ -101,6 +104,56 @@ func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleLanding(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(s.tmpl.RenderLanding(s.version, s.cfg.DefaultTheme))
+}
+
+// preRenderDocs reads the embedded project-readme.md and renders it once at
+// startup. If the file is missing (e.g. dev builds without `make deps`), the
+// docs page gracefully returns 404.
+func (s *Server) preRenderDocs() {
+	readmeBytes, err := fs.ReadFile(s.assets, "project-readme.md")
+	if err != nil {
+		return // file not embedded — docs page will 404
+	}
+
+	htmlContent, meta, err := s.mdRender.Render(readmeBytes)
+	if err != nil {
+		slog.Error("pre-render docs failed", "error", err)
+		return
+	}
+
+	htmlContent = sanitize.HTML(htmlContent)
+
+	lightCSS := readAssetString(s.assets, "github-markdown-light.css")
+	darkCSS := readAssetString(s.assets, "github-markdown-dark.css")
+
+	pageData := cookedtemplate.PageData{
+		Version:      s.version,
+		UpstreamURL:  "/_cooked/docs",
+		ContentType:  render.TypeMarkdown,
+		DefaultTheme: s.cfg.DefaultTheme,
+		Content:      template.HTML(htmlContent),
+		MermaidPath:  "/_cooked/mermaid.min.js",
+	}
+
+	if meta != nil {
+		pageData.Title = meta.Title
+		pageData.HasMermaid = meta.HasMermaid
+		pageData.HeadingCount = meta.HeadingCount
+		pageData.CodeBlockCount = meta.CodeBlockCount
+		pageData.Headings = meta.Headings
+	}
+
+	s.readmePage = s.tmpl.RenderPage(pageData, lightCSS, darkCSS)
+}
+
+func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
+	if s.readmePage == nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Write(s.readmePage)
 }
 
 func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {

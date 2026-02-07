@@ -40,6 +40,7 @@ deps:
 	@echo "$(MERMAID_SHA256)  embed/mermaid.min.js" | shasum -a 256 -c
 	@echo "$(GITHUB_MD_LIGHT_SHA256)  embed/github-markdown-light.css" | shasum -a 256 -c
 	@echo "$(GITHUB_MD_DARK_SHA256)  embed/github-markdown-dark.css" | shasum -a 256 -c
+	cp README.md embed/project-readme.md
 	@echo "deps: downloaded and verified mermaid@$(MERMAID_VERSION), github-markdown-css@$(GITHUB_MD_CSS_VERSION)"
 
 ## build: Build the cooked binary (native)
@@ -108,6 +109,7 @@ clean:
 	rm -f embed/mermaid.min.js
 	rm -f embed/github-markdown-light.css
 	rm -f embed/github-markdown-dark.css
+	rm -f embed/project-readme.md
 
 ## lint: Run golangci-lint and gitleaks
 lint: lint-go

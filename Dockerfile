@@ -18,6 +18,7 @@ RUN mkdir -p embed && \
     echo "b45ead2db01f5856c4eb378f21f47da63f6b0ecf3be5d06385472164b7283df6  embed/github-markdown-dark.css" | sha256sum -c
 
 COPY . .
+RUN cp README.md embed/project-readme.md
 
 ARG LDFLAGS=""
 RUN CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o /cooked ./cmd/cooked
@@ -29,7 +30,6 @@ RUN apk add --no-cache ca-certificates && update-ca-certificates
 WORKDIR /app
 
 COPY --from=builder /cooked /usr/local/bin/cooked
-COPY README.md /app/README.md
 
 EXPOSE 8080
 
