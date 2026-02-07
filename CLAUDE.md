@@ -177,6 +177,26 @@ Always run before committing:
 make lint
 ```
 
+### Conventional Commits
+
+This repo uses **release-please** with Conventional Commits. The commit prefix determines
+whether a release is triggered. Choose the wrong prefix and you create a spurious release PR.
+
+**Release-triggering prefixes** (use only when shipping user-facing changes):
+- `fix:` → patch release (bug fixes in code)
+- `feat:` → minor release (new functionality)
+
+**Non-release prefixes** (no release PR created):
+- `docs:` — documentation-only changes (README, CLAUDE.md, comments)
+- `chore:` — maintenance (deps, CI config, beads sync)
+- `ci:` — CI/CD pipeline changes
+- `test:` — test-only changes
+- `refactor:` — code restructuring with no behavior change
+- `style:` — formatting, whitespace
+
+**Decision rule**: Choose the prefix based on **what files changed**, not the intent.
+A "fix" to a README typo is `docs:`, not `fix:`. A test-only change is `test:`, not `fix:`.
+
 ---
 
 ## Testing
