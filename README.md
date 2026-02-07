@@ -112,7 +112,7 @@ docker run -p 8080:8080 cooked \
 If your upstreams use certificates signed by an internal CA, add the CA cert to the image:
 
 ```dockerfile
-FROM cooked:latest
+FROM ghcr.io/air-gapped/cooked:latest
 COPY my-internal-ca.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 ```
@@ -122,7 +122,7 @@ RUN update-ca-certificates
 ```yaml
 services:
   cooked:
-    image: cooked:latest
+    image: ghcr.io/air-gapped/cooked:latest
     ports:
       - "8080:8080"
     command: ["--allowed-upstreams=*.internal,10.0.0.0/8,gitea.corp.example.com"]
