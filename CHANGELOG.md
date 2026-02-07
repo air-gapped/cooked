@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/air-gapped/cooked/compare/v1.0.3...v1.0.4) (2026-02-07)
+
+
+### Bug Fixes
+
+* use full ghcr.io registry path for Docker images in README ([453c12c](https://github.com/air-gapped/cooked/commit/453c12c7be3187484e99ef2b665cce38e558faed))
+
 ## [1.0.3](https://github.com/air-gapped/cooked/compare/v1.0.2...v1.0.3) (2026-02-07)
 
 
