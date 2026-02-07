@@ -3,15 +3,15 @@
     <span class="cooked-code-language">rust</span>
     <button class="cooked-copy-btn" data-state="idle">Copy</button>
   </div>
-<pre class="chroma"><code><span class="line"><span class="ln">1</span><span class="cl"><span class="sd">//! Sample Rust module for testing syntax highlighting.
-</span></span></span><span class="line"><span class="ln">2</span><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="ln">3</span><span class="cl"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w">
-</span></span></span><span class="line"><span class="ln">4</span><span class="cl"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">fmt</span><span class="p">;</span><span class="w">
-</span></span></span><span class="line"><span class="ln">5</span><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="ln">6</span><span class="cl"><span class="sd">/// A key-value store with expiration.
-</span></span></span><span class="line"><span class="ln">7</span><span class="cl"><span class="cp">#[derive(Debug)]</span><span class="w">
-</span></span></span><span class="line"><span class="ln">8</span><span class="cl"><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Store</span><span class="o">&lt;</span><span class="n">V</span>: <span class="nb">Clone</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="ln">9</span><span class="cl"><span class="w">    </span><span class="n">data</span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">Entry</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="w">
+<pre class="chroma"><code><span class="line"><span class="ln"> 1</span><span class="cl"><span class="sd">//! Sample Rust module for testing syntax highlighting.
+</span></span></span><span class="line"><span class="ln"> 2</span><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="ln"> 3</span><span class="cl"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 4</span><span class="cl"><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">fmt</span><span class="p">;</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 5</span><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="ln"> 6</span><span class="cl"><span class="sd">/// A key-value store with expiration.
+</span></span></span><span class="line"><span class="ln"> 7</span><span class="cl"><span class="cp">#[derive(Debug)]</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 8</span><span class="cl"><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Store</span><span class="o">&lt;</span><span class="n">V</span>: <span class="nb">Clone</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 9</span><span class="cl"><span class="w">    </span><span class="n">data</span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="nb">String</span><span class="p">,</span><span class="w"> </span><span class="n">Entry</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="w">
 </span></span></span><span class="line"><span class="ln">10</span><span class="cl"><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="ln">11</span><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="ln">12</span><span class="cl"><span class="cp">#[derive(Debug, Clone)]</span><span class="w">

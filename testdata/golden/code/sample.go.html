@@ -3,15 +3,15 @@
     <span class="cooked-code-language">go</span>
     <button class="cooked-copy-btn" data-state="idle">Copy</button>
   </div>
-<pre class="chroma"><code><span class="line"><span class="ln">1</span><span class="cl"><span class="c1">// Package sample demonstrates Go syntax highlighting.</span><span class="w">
-</span></span></span><span class="line"><span class="ln">2</span><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">sample</span><span class="w">
-</span></span></span><span class="line"><span class="ln">3</span><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="ln">4</span><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="ln">5</span><span class="cl"><span class="w">	</span><span class="s">&#34;context&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="ln">6</span><span class="cl"><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="ln">7</span><span class="cl"><span class="w">	</span><span class="s">&#34;sync&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="ln">8</span><span class="cl"><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="ln">9</span><span class="cl"><span class="w">
+<pre class="chroma"><code><span class="line"><span class="ln"> 1</span><span class="cl"><span class="c1">// Package sample demonstrates Go syntax highlighting.</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 2</span><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">sample</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 3</span><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="ln"> 4</span><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 5</span><span class="cl"><span class="w">	</span><span class="s">&#34;context&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 6</span><span class="cl"><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 7</span><span class="cl"><span class="w">	</span><span class="s">&#34;sync&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 8</span><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="ln"> 9</span><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="ln">10</span><span class="cl"><span class="c1">// Cache is a concurrent-safe in-memory cache.</span><span class="w">
 </span></span></span><span class="line"><span class="ln">11</span><span class="cl"><span class="kd">type</span><span class="w"> </span><span class="nx">Cache</span><span class="p">[</span><span class="nx">K</span><span class="w"> </span><span class="nx">comparable</span><span class="p">,</span><span class="w"> </span><span class="nx">V</span><span class="w"> </span><span class="kt">any</span><span class="p">]</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="ln">12</span><span class="cl"><span class="w">	</span><span class="nx">mu</span><span class="w">    </span><span class="nx">sync</span><span class="p">.</span><span class="nx">RWMutex</span><span class="w">
