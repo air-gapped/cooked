@@ -9,8 +9,9 @@ import (
 	"github.com/air-gapped/cooked/internal/render"
 )
 
-// hrefRe matches href="..." and src="..." attributes in HTML.
-var hrefRe = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*")([^"]+)(")`)
+// hrefRe patterns match href="..." and src="..." attributes in HTML.
+var hrefReDouble = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)(")([^"]+)(")`)
+var hrefReSingle = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)(')([^']+)(')`)
 
 // RelativeURLs rewrites relative URLs in HTML content.
 // Markdown file links are rewritten through cooked (e.g. /https://upstream/path/CONTRIBUTING.md).
@@ -30,60 +31,68 @@ func RelativeURLs(html []byte, upstreamURL, baseURL string) []byte {
 	}
 	base := u.Scheme + "://" + u.Host + basePath
 
-	return hrefRe.ReplaceAllFunc(html, func(match []byte) []byte {
-		parts := hrefRe.FindSubmatch(match)
-		if len(parts) < 4 {
-			return match
-		}
-
-		prefix := string(parts[1]) // href="
-		href := string(parts[2])   // the URL
-		suffix := string(parts[3]) // "
-
-		// Skip absolute URLs
-		if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") || strings.HasPrefix(href, "//") {
-			return match
-		}
-
-		// Skip fragments and data URIs
-		if strings.HasPrefix(href, "#") || strings.HasPrefix(href, "data:") || strings.HasPrefix(href, "mailto:") {
-			return match
-		}
-
-		// Separate fragment from path
-		fragment := ""
-		if idx := strings.Index(href, "#"); idx >= 0 {
-			fragment = href[idx:]
-			href = href[:idx]
-		}
-
-		// Separate query from path
-		query := ""
-		if idx := strings.Index(href, "?"); idx >= 0 {
-			query = href[idx:]
-			href = href[:idx]
-		}
-
-		if href == "" {
-			// Fragment-only or query-only link
-			return match
-		}
-
-		// Resolve relative path against base
-		resolved := resolveRelative(base, href)
-
-		if render.IsMarkdownLink(href) {
-			// Markdown links go through cooked
-			cookedPrefix := "/"
-			if baseURL != "" {
-				cookedPrefix = strings.TrimRight(baseURL, "/") + "/"
+	rewriter := func(re *regexp.Regexp) func([]byte) []byte {
+		return func(match []byte) []byte {
+			parts := re.FindSubmatch(match)
+			if len(parts) < 5 {
+				return match
 			}
-			return []byte(prefix + cookedPrefix + resolved + query + fragment + suffix)
-		}
 
-		// Non-markdown links point directly to upstream
-		return []byte(prefix + resolved + query + fragment + suffix)
-	})
+			attrEq := string(parts[1]) // href= or src=
+			quote := string(parts[2])  // " or '
+			href := string(parts[3])   // the URL
+			// parts[4] is the closing quote (same as parts[2])
+
+			// Skip absolute URLs
+			if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") || strings.HasPrefix(href, "//") {
+				return match
+			}
+
+			// Skip fragments and data URIs
+			if strings.HasPrefix(href, "#") || strings.HasPrefix(href, "data:") || strings.HasPrefix(href, "mailto:") {
+				return match
+			}
+
+			// Separate fragment from path
+			fragment := ""
+			if idx := strings.Index(href, "#"); idx >= 0 {
+				fragment = href[idx:]
+				href = href[:idx]
+			}
+
+			// Separate query from path
+			query := ""
+			if idx := strings.Index(href, "?"); idx >= 0 {
+				query = href[idx:]
+				href = href[:idx]
+			}
+
+			if href == "" {
+				// Fragment-only or query-only link
+				return match
+			}
+
+			// Resolve relative path against base
+			resolved := resolveRelative(base, href)
+
+			if render.IsMarkdownLink(href) {
+				// Markdown links go through cooked
+				cookedPrefix := "/"
+				if baseURL != "" {
+					cookedPrefix = strings.TrimRight(baseURL, "/") + "/"
+				}
+				return []byte(attrEq + quote + cookedPrefix + resolved + query + fragment + quote)
+			}
+
+			// Non-markdown links point directly to upstream
+			return []byte(attrEq + quote + resolved + query + fragment + quote)
+		}
+	}
+
+	// Apply rewriting for both double-quoted and single-quoted attributes
+	result := hrefReDouble.ReplaceAllFunc(html, rewriter(hrefReDouble))
+	result = hrefReSingle.ReplaceAllFunc(result, rewriter(hrefReSingle))
+	return result
 }
 
 // resolveRelative resolves a relative href against a base URL.

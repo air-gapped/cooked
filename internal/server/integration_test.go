@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/air-gapped/cooked/internal/config"
+	"github.com/air-gapped/cooked/internal/fetch"
 )
 
 // newIntegrationServer creates a test server with configurable options.
@@ -38,7 +39,8 @@ func newIntegrationServer(t *testing.T, opts ...func(*config.Config)) (*httptest
 		"github-markdown-dark.css":  {Data: []byte("/* dark */")},
 	}
 
-	s := New(cfg, "v0.1.0-test", assets)
+	// Disable SSRF dial protection for tests (httptest servers bind to 127.0.0.1).
+	s := New(cfg, "v0.1.0-test", assets, fetch.WithSSRFProtection(false))
 	srv := httptest.NewServer(s.Handler())
 	return srv, srv.Close
 }

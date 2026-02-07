@@ -18,6 +18,12 @@ var selfClosingPatterns []*regexp.Regexp
 // eventHandlerRe matches on* event handler attributes.
 var eventHandlerRe = regexp.MustCompile(`(?i)\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)`)
 
+// dangerousURIRe patterns match javascript:, vbscript:, and data:text/html URIs
+// in href and src attributes (double-quoted and single-quoted).
+var dangerousURIReDouble = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)"[^"]*(?:javascript|vbscript|data\s*:\s*text/html)[^"]*"`)
+var dangerousURIReSingle = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)'[^']*(?:javascript|vbscript|data\s*:\s*text/html)[^']*'`)
+var dangerousURIReUnquoted = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)(?:javascript|vbscript|data\s*:\s*text/html)[^\s>]*`)
+
 func init() {
 	for _, tag := range dangerousTags {
 		// Full block: <tag ...>content</tag>
@@ -55,6 +61,11 @@ func HTML(input []byte) []byte {
 		// Remove on* event handler attributes
 		s = eventHandlerRe.ReplaceAllString(s, "")
 
+		// Remove dangerous URI schemes from href/src attributes
+		s = dangerousURIReDouble.ReplaceAllString(s, `${1}""`)
+		s = dangerousURIReSingle.ReplaceAllString(s, `${1}''`)
+		s = dangerousURIReUnquoted.ReplaceAllString(s, `${1}""`)
+
 		if s == prev {
 			break
 		}
@@ -73,6 +84,9 @@ func ContainsDangerousContent(html string) bool {
 		}
 	}
 	if eventHandlerRe.MatchString(html) {
+		return true
+	}
+	if dangerousURIReDouble.MatchString(html) || dangerousURIReSingle.MatchString(html) || dangerousURIReUnquoted.MatchString(html) {
 		return true
 	}
 	return false

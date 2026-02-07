@@ -15,7 +15,7 @@ func TestCachedClient_Miss(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	cc := NewCachedClient(c, cache.New(5*time.Minute, 100*1024*1024))
 
 	result, entry, err := cc.Fetch(upstream.URL + "/README.md")
@@ -42,7 +42,7 @@ func TestCachedClient_Hit(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	memCache := cache.New(5*time.Minute, 100*1024*1024)
 	cc := NewCachedClient(c, memCache)
 
@@ -100,7 +100,7 @@ func TestCachedClient_Revalidation304(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	memCache := cache.New(1*time.Millisecond, 100*1024*1024) // very short TTL
 	cc := NewCachedClient(c, memCache)
 
@@ -137,7 +137,7 @@ func TestCachedClient_RevalidationError_ServesStale(t *testing.T) {
 		w.Write([]byte("content"))
 	}))
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	memCache := cache.New(1*time.Millisecond, 100*1024*1024) // very short TTL
 	cc := NewCachedClient(c, memCache)
 

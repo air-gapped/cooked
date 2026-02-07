@@ -26,7 +26,7 @@ func Parse(args []string) (*Config, error) {
 
 	cfg := &Config{}
 
-	fs.StringVar(&cfg.Listen, "listen", envOr("COOKED_LISTEN", ":8080"), "Listen address")
+	fs.StringVar(&cfg.Listen, "listen", envOr("COOKED_LISTEN", "127.0.0.1:8080"), "Listen address")
 	fs.DurationVar(&cfg.CacheTTL, "cache-ttl", envDurationOr("COOKED_CACHE_TTL", 5*time.Minute), "Cache TTL duration")
 	cacheMaxSize := fs.String("cache-max-size", envOr("COOKED_CACHE_MAX_SIZE", "100MB"), "Max cache size (e.g. 100MB)")
 	fs.DurationVar(&cfg.FetchTimeout, "fetch-timeout", envDurationOr("COOKED_FETCH_TIMEOUT", 30*time.Second), "Upstream fetch timeout")

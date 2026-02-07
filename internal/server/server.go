@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -32,8 +33,24 @@ type Server struct {
 }
 
 // New creates a new cooked server with all dependencies.
-func New(cfg *config.Config, version string, assets fs.FS) *Server {
-	client := fetch.NewClient(cfg.FetchTimeout, cfg.MaxFileSize, cfg.TLSSkipVerify)
+// Extra fetch options can be passed for testing (e.g. disabling SSRF protection).
+func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fetch.Option) *Server {
+	// Build fetch client options.
+	var fetchOpts []fetch.Option
+	fetchOpts = append(fetchOpts, extraFetchOpts...)
+
+	// Add redirect validator that enforces the allowlist on redirect targets.
+	if cfg.AllowedUpstreams != "" {
+		allowed := cfg.AllowedUpstreams
+		fetchOpts = append(fetchOpts, fetch.WithRedirectValidator(func(target *url.URL) error {
+			if !CheckAllowedUpstream(target.Host, allowed) {
+				return fmt.Errorf("redirect target %q not in allowed upstreams", target.Host)
+			}
+			return nil
+		}))
+	}
+
+	client := fetch.NewClient(cfg.FetchTimeout, cfg.MaxFileSize, cfg.TLSSkipVerify, fetchOpts...)
 	memCache := cache.New(cfg.CacheTTL, cfg.CacheMaxSize)
 	cachedClient := fetch.NewCachedClient(client, memCache)
 
@@ -291,8 +308,13 @@ func (s *Server) renderError(w http.ResponseWriter, upstreamURL string, statusCo
 func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upstreamStatus int,
 	cacheStatus, contentType string, renderMs, upstreamMs int64, version string) {
 
+	// F-10: Security response headers
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.Header().Set("X-Frame-Options", "DENY")
+
 	w.Header().Set("X-Cooked-Version", version)
-	w.Header().Set("X-Cooked-Upstream", upstream)
+	w.Header().Set("X-Cooked-Upstream", redactUpstream(upstream))
 	w.Header().Set("X-Cooked-Upstream-Status", fmt.Sprintf("%d", upstreamStatus))
 	w.Header().Set("X-Cooked-Cache", cacheStatus)
 	w.Header().Set("X-Cooked-Content-Type", contentType)
@@ -323,6 +345,19 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			Bytes:       wrapped.Bytes,
 		})
 	})
+}
+
+// redactUpstream strips query, fragment, and userinfo from an upstream URL
+// to avoid leaking tokens or credentials in headers and logs.
+func redactUpstream(raw string) string {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	u.User = nil
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
 }
 
 func parseHeaderInt64(s string) int64 {

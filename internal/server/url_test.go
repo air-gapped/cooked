@@ -63,12 +63,16 @@ func TestCheckAllowedUpstream(t *testing.T) {
 		{"example.com", "", true},
 		{"anything.com", "", true},
 
-		// Exact prefix match
+		// Exact match
 		{"cgit.internal", "cgit.internal", true},
 		{"s3.internal", "cgit.internal,s3.internal", true},
 
-		// Prefix matching
-		{"cgit.internal.example.com", "cgit.internal", true},
+		// Subdomain match
+		{"sub.cgit.internal", "cgit.internal", true},
+		{"deep.sub.cgit.internal", "cgit.internal", true},
+
+		// F-04: Must NOT match — attacker-controlled suffix
+		{"cgit.internal.attacker.com", "cgit.internal", false},
 
 		// Not in list
 		{"evil.com", "cgit.internal,s3.internal", false},
@@ -78,6 +82,10 @@ func TestCheckAllowedUpstream(t *testing.T) {
 
 		// Whitespace in allowed list
 		{"cgit.internal", " cgit.internal , s3.internal ", true},
+
+		// Case insensitive
+		{"CGIT.INTERNAL", "cgit.internal", true},
+		{"cgit.internal", "CGIT.INTERNAL", true},
 	}
 
 	for _, tc := range tests {

@@ -4,10 +4,17 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 )
+
+// newTestClient creates a fetch client with SSRF protection disabled,
+// so tests can connect to httptest servers on 127.0.0.1.
+func newTestClient(timeout time.Duration, maxFileSize int64) *Client {
+	return NewClient(timeout, maxFileSize, false, WithSSRFProtection(false))
+}
 
 func TestFetch_Success(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +25,7 @@ func TestFetch_Success(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	result, err := c.Fetch(upstream.URL+"/README.md", "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +58,7 @@ func TestFetch_ConditionalGet304(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	result, err := c.Fetch(upstream.URL+"/file.md", `"abc123"`, "")
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +79,7 @@ func TestFetch_FileTooLarge_ContentLength(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 1024, false) // 1KB limit
+	c := newTestClient(10*time.Second, 1024) // 1KB limit
 	_, err := c.Fetch(upstream.URL+"/big.md", "", "")
 	if err == nil {
 		t.Error("expected error for large file, got nil")
@@ -92,7 +99,7 @@ func TestFetch_FileTooLarge_StreamingBody(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 1024, false) // 1KB limit
+	c := newTestClient(10*time.Second, 1024) // 1KB limit
 	_, err := c.Fetch(upstream.URL+"/big.md", "", "")
 	if err == nil {
 		t.Error("expected error for large streamed file, got nil")
@@ -109,7 +116,7 @@ func TestFetch_NoCredentialForwarding(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	_, err := c.Fetch(upstream.URL+"/file.md", "", "")
 	if err != nil {
 		t.Fatal(err)
@@ -130,7 +137,7 @@ func TestFetch_Timeout(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(100*time.Millisecond, 5*1024*1024, false)
+	c := newTestClient(100*time.Millisecond, 5*1024*1024)
 	_, err := c.Fetch(upstream.URL+"/slow.md", "", "")
 	if err == nil {
 		t.Error("expected timeout error, got nil")
@@ -144,12 +151,86 @@ func TestFetch_UpstreamNon200(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	c := NewClient(10*time.Second, 5*1024*1024, false)
+	c := newTestClient(10*time.Second, 5*1024*1024)
 	result, err := c.Fetch(upstream.URL+"/missing.md", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if result.StatusCode != 404 {
 		t.Errorf("StatusCode = %d, want 404", result.StatusCode)
+	}
+}
+
+// F-03: DNS TOCTOU — the custom DialContext blocks connections to private IPs.
+func TestFetch_SSRFDialBlock(t *testing.T) {
+	// httptest.NewServer binds to 127.0.0.1, which is a loopback address.
+	// With SSRF protection enabled (default), the dial guard blocks it.
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("should not reach here"))
+	}))
+	defer upstream.Close()
+
+	c := NewClient(5*time.Second, 5*1024*1024, false) // SSRF enabled by default
+	_, err := c.Fetch(upstream.URL+"/secret", "", "")
+	if err == nil {
+		t.Fatal("expected SSRF dial block error, got nil")
+	}
+	if !strings.Contains(err.Error(), "blocked IP") {
+		t.Errorf("unexpected error: %v, want 'blocked IP'", err)
+	}
+}
+
+// F-01: Redirect to max limit and redirect validator.
+func TestFetch_RedirectChainExceedsMax(t *testing.T) {
+	redirectCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		redirectCount++
+		http.Redirect(w, r, r.URL.Path, http.StatusFound)
+	}))
+	defer srv.Close()
+
+	// Use SSRF disabled so we can reach the loopback test server.
+	c := NewClient(5*time.Second, 5*1024*1024, false, WithSSRFProtection(false))
+	_, err := c.Fetch(srv.URL+"/loop", "", "")
+	if err == nil {
+		t.Fatal("expected too many redirects error, got nil")
+	}
+	if !strings.Contains(err.Error(), "too many redirects") {
+		t.Errorf("unexpected error: %v, want 'too many redirects'", err)
+	}
+}
+
+// F-01: Redirect validator blocks redirect to disallowed host.
+func TestFetch_RedirectValidatorBlocks(t *testing.T) {
+	// Server A redirects to Server B.
+	srvB := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("should not reach B"))
+	}))
+	defer srvB.Close()
+
+	srvA := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, srvB.URL+"/evil", http.StatusFound)
+	}))
+	defer srvA.Close()
+
+	// Validator blocks any host that isn't srvA's host.
+	srvAHost := srvA.Listener.Addr().String()
+	validator := func(target *url.URL) error {
+		if target.Host != srvAHost {
+			return fmt.Errorf("host %q not allowed", target.Host)
+		}
+		return nil
+	}
+
+	c := NewClient(5*time.Second, 5*1024*1024, false,
+		WithSSRFProtection(false),
+		WithRedirectValidator(validator),
+	)
+	_, err := c.Fetch(srvA.URL+"/start", "", "")
+	if err == nil {
+		t.Fatal("expected redirect validator error, got nil")
+	}
+	if !strings.Contains(err.Error(), "redirect blocked") {
+		t.Errorf("unexpected error: %v, want 'redirect blocked'", err)
 	}
 }

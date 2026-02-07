@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/air-gapped/cooked/internal/config"
+	"github.com/air-gapped/cooked/internal/fetch"
 )
 
 func newTestServer(t *testing.T, cfg *config.Config) *Server {
@@ -32,7 +33,8 @@ func newTestServer(t *testing.T, cfg *config.Config) *Server {
 		"github-markdown-dark.css":  {Data: []byte("/* dark */")},
 	}
 
-	return New(cfg, "v0.1.0-test", assets)
+	// Disable SSRF dial protection for tests (httptest servers bind to 127.0.0.1).
+	return New(cfg, "v0.1.0-test", assets, fetch.WithSSRFProtection(false))
 }
 
 func TestHealthz(t *testing.T) {
@@ -315,5 +317,78 @@ func TestCacheControlHeader(t *testing.T) {
 	cc := resp.Header.Get("Cache-Control")
 	if cc != "public, max-age=300" {
 		t.Errorf("Cache-Control = %q, want 'public, max-age=300'", cc)
+	}
+}
+
+// F-10: Security response headers
+func TestSecurityHeaders(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("# Hello\n"))
+	}))
+	defer upstream.Close()
+
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/" + upstream.URL + "/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	tests := map[string]string{
+		"X-Content-Type-Options": "nosniff",
+		"Referrer-Policy":        "no-referrer",
+		"X-Frame-Options":        "DENY",
+	}
+	for header, want := range tests {
+		if got := resp.Header.Get(header); got != want {
+			t.Errorf("%s = %q, want %q", header, got, want)
+		}
+	}
+}
+
+// F-10: Security headers on error responses too
+func TestSecurityHeaders_ErrorResponse(t *testing.T) {
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/ftp://bad/url")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if got := resp.Header.Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Errorf("X-Content-Type-Options on error = %q, want nosniff", got)
+	}
+}
+
+// F-09: Redact upstream URLs — query params stripped from header
+func TestUpstreamURLRedaction(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("# Test\n"))
+	}))
+	defer upstream.Close()
+
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/" + upstream.URL + "/file.md?token=secret&key=abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	got := resp.Header.Get("X-Cooked-Upstream")
+	if strings.Contains(got, "token") || strings.Contains(got, "secret") || strings.Contains(got, "key=abc") {
+		t.Errorf("X-Cooked-Upstream contains sensitive query: %q", got)
+	}
+	// Should still contain the base URL without query
+	if !strings.Contains(got, "/file.md") {
+		t.Errorf("X-Cooked-Upstream missing path: %q", got)
 	}
 }

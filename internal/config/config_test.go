@@ -11,8 +11,8 @@ func TestParse_Defaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.Listen != ":8080" {
-		t.Errorf("Listen = %q, want :8080", cfg.Listen)
+	if cfg.Listen != "127.0.0.1:8080" {
+		t.Errorf("Listen = %q, want 127.0.0.1:8080", cfg.Listen)
 	}
 	if cfg.CacheTTL != 5*time.Minute {
 		t.Errorf("CacheTTL = %v, want 5m", cfg.CacheTTL)

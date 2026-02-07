@@ -194,6 +194,43 @@ func FuzzSanitizeHTML(f *testing.F) {
 	})
 }
 
+// F-07: XSS hardening — javascript:, vbscript:, data:text/html URIs
+func TestHTML_StripDangerousURIs(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   string
+		mustNot string
+	}{
+		{"javascript double-quoted", `<a href="javascript:alert(1)">click</a>`, "javascript:"},
+		{"javascript single-quoted", `<a href='javascript:alert(1)'>click</a>`, "javascript:"},
+		{"vbscript double-quoted", `<a href="vbscript:MsgBox(1)">click</a>`, "vbscript:"},
+		{"data:text/html", `<a href="data:text/html,<script>alert(1)</script>">click</a>`, "data:text/html"},
+		{"mixed case", `<a HREF="JavaScript:alert(1)">click</a>`, "javascript:"},
+		{"src attribute", `<img src="javascript:alert(1)">`, "javascript:"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := string(HTML([]byte(tc.input)))
+			lower := strings.ToLower(got)
+			if strings.Contains(lower, strings.ToLower(tc.mustNot)) {
+				t.Errorf("dangerous URI not stripped: %s", got)
+			}
+		})
+	}
+}
+
+func TestHTML_PreservesSafeHrefs(t *testing.T) {
+	input := `<a href="https://example.com">link</a><a href="data:image/png;base64,abc">img</a>`
+	got := string(HTML([]byte(input)))
+	if !strings.Contains(got, "https://example.com") {
+		t.Error("safe https href was stripped")
+	}
+	if !strings.Contains(got, "data:image/png") {
+		t.Error("safe data:image URI was stripped")
+	}
+}
+
 func TestContainsDangerousContent(t *testing.T) {
 	if !ContainsDangerousContent(`<script>alert('hi')</script>`) {
 		t.Error("should detect script")

@@ -31,12 +31,12 @@ make build   # Build the binary
 
 | Flag | Env Var | Default | Description |
 |------|---------|---------|-------------|
-| `--listen` | `COOKED_LISTEN` | `:8080` | Listen address |
+| `--listen` | `COOKED_LISTEN` | `127.0.0.1:8080` | Listen address (loopback only by default; Docker overrides to `0.0.0.0:8080`) |
 | `--cache-ttl` | `COOKED_CACHE_TTL` | `5m` | Cache TTL duration |
 | `--cache-max-size` | `COOKED_CACHE_MAX_SIZE` | `100MB` | Max cache size (e.g. 100MB) |
 | `--fetch-timeout` | `COOKED_FETCH_TIMEOUT` | `30s` | Upstream fetch timeout |
 | `--max-file-size` | `COOKED_MAX_FILE_SIZE` | `5MB` | Max file size to render (e.g. 5MB) |
-| `--allowed-upstreams` | `COOKED_ALLOWED_UPSTREAMS` | *(empty)* | Comma-separated allowed upstream host prefixes |
+| `--allowed-upstreams` | `COOKED_ALLOWED_UPSTREAMS` | *(empty)* | Comma-separated allowed upstream hosts (exact or subdomain match) |
 | `--base-url` | `COOKED_BASE_URL` | *(auto-detect)* | Public base URL of cooked |
 | `--default-theme` | `COOKED_DEFAULT_THEME` | `auto` | Default theme: auto, light, or dark |
 | `--tls-skip-verify` | `COOKED_TLS_SKIP_VERIFY` | `false` | Disable TLS certificate verification for upstream fetches |
@@ -47,7 +47,7 @@ All flags have environment variable equivalents prefixed with `COOKED_`.
 
 ### Allowed upstreams
 
-The `--allowed-upstreams` flag restricts which upstream hosts cooked will fetch from. It takes a comma-separated list of host prefixes. A request is allowed if the upstream host starts with any of the prefixes.
+The `--allowed-upstreams` flag restricts which upstream hosts cooked will fetch from. It takes a comma-separated list of hostnames. A request is allowed if the upstream host exactly matches an entry, or is a subdomain of an entry (e.g. `sub.cgit.internal` matches `cgit.internal`). Redirect targets are also validated against the allowlist.
 
 ```bash
 # Only allow fetching from two internal hosts
@@ -58,20 +58,16 @@ In air-gapped environments with private IP upstreams (10.x, 172.16.x, etc.), you
 
 ### Private IP protection (SSRF)
 
-When `--allowed-upstreams` is empty (the default), cooked blocks requests to private and loopback IP ranges to prevent server-side request forgery. The blocked ranges are:
+cooked blocks requests to private and loopback IP ranges to prevent server-side request forgery (SSRF). IP validation is enforced at DNS resolution time to prevent TOCTOU attacks. The blocked ranges include:
 
-- `127.0.0.0/8` — IPv4 loopback
-- `10.0.0.0/8` — IPv4 private (Class A)
-- `172.16.0.0/12` — IPv4 private (Class B)
-- `192.168.0.0/16` — IPv4 private (Class C)
-- `::1/128` — IPv6 loopback
-- `fd00::/8` — IPv6 unique local address
+- IPv4/IPv6 loopback, private (RFC 1918), link-local, multicast, unspecified
+- CGNAT (`100.64.0.0/10`)
 
-This protection is **disabled** when `--allowed-upstreams` is set, since the allowlist itself restricts which hosts can be reached.
+The pre-fetch hostname check provides fast-fail when `--allowed-upstreams` is empty. The dial-time IP check is always active as defense in depth. Redirects are capped at 5 hops and validated against the allowlist when set.
 
 ### HTML sanitization
 
-Rendered markdown/MDX output is sanitized: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>` tags and all `on*` event handler attributes are stripped.
+Rendered markdown/MDX output is sanitized: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>` tags and all `on*` event handler attributes are stripped. Additionally, `javascript:`, `vbscript:`, and `data:text/html` URIs in `href`/`src` attributes are removed.
 
 ### TLS verification
 
