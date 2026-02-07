@@ -89,7 +89,7 @@ func (r *MarkdownRenderer) Render(source []byte) ([]byte, *MarkdownMeta, error) 
 
 // extractMeta walks the AST to count headings, code blocks, and detect mermaid.
 func extractMeta(doc ast.Node, source []byte, meta *MarkdownMeta) {
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}

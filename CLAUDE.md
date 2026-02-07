@@ -166,7 +166,8 @@ make test        # Run all tests
 make test-race   # Run tests with race detector
 make docker      # Build Docker image
 make clean       # Remove binary + downloaded assets
-make lint        # Run gitleaks
+make lint        # Run golangci-lint + gitleaks
+make lint-go     # Run golangci-lint only
 ```
 
 ### Pre-commit

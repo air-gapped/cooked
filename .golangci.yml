@@ -1,0 +1,83 @@
+# golangci-lint configuration
+# https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  # Start with defaults, add useful extras
+  enable:
+    # Default linters (already enabled)
+    - errcheck      # Unchecked error returns
+    - gosimple      # Simplifications
+    - govet         # go vet checks
+    - ineffassign   # Ineffectual assignments
+    - staticcheck   # go vet on steroids
+    - unused        # Unused code
+
+    # Extra linters
+    - gocyclo       # Cyclomatic complexity
+    - misspell      # Spelling errors
+    - bodyclose     # HTTP response body not closed
+    - gofmt         # Formatting
+
+    # Security
+    - gosec         # Security issues
+
+linters-settings:
+  gocyclo:
+    min-complexity: 20
+
+  errcheck:
+    exclude-functions:
+      - (io.Closer).Close
+      - (net/http.ResponseWriter).Write
+      - (*encoding/json.Encoder).Encode
+      - io.Copy
+      - (*flag.FlagSet).Parse
+    check-type-assertions: false
+
+  gosec:
+    excludes:
+      - G104  # Audit errors not checked (covered by errcheck)
+      - G304  # File path from variable (often false positive)
+      - G107  # HTTP request with variable url (upstream fetching is core feature)
+      - G404  # Weak random (not security-critical here)
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Tests can have unchecked errors for brevity
+    - path: _test\.go
+      linters:
+        - errcheck
+    # Tests can use weak TLS, simple servers, and 0644 golden file permissions
+    - path: _test\.go
+      linters:
+        - gosec
+      text: "G(306|402|112|114)"
+    # Tests can have complex setup
+    - path: _test\.go
+      linters:
+        - gocyclo
+    # Tests can skip body close on error-path checks
+    - path: _test\.go
+      linters:
+        - bodyclose
+    # template.HTML is intentional — content is sanitized before this point
+    - path: internal/server/server\.go
+      linters:
+        - gosec
+      text: "G203"
+    # InsecureSkipVerify is intentional for --tls-skip-verify flag
+    - path: (fetch|client)\.go
+      linters:
+        - gosec
+      text: "G402"
+    # Complex functions in server/config are inherent
+    - path: (server|config)\.go
+      linters:
+        - gocyclo

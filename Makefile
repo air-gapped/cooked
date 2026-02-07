@@ -21,10 +21,14 @@ LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DA
 IMAGE   := cooked
 SHA_TAG := sha-$(COMMIT)
 
+# Tool paths (support tools installed in GOPATH/bin)
+GOPATH  := $(shell go env GOPATH)
+GOLANGCI_LINT := $(shell command -v golangci-lint 2>/dev/null || echo $(GOPATH)/bin/golangci-lint)
+
 # Cross-compilation output directory
 DIST := dist
 
-.PHONY: deps build test test-race docker docker-amd64 docker-arm64 docker-multi clean lint help
+.PHONY: deps build test test-race docker docker-amd64 docker-arm64 docker-multi clean lint lint-go help
 .PHONY: build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 build-all
 
 ## deps: Download mermaid.js and github-markdown-css into embed/ (with SHA-256 verification)
@@ -105,9 +109,13 @@ clean:
 	rm -f embed/github-markdown-light.css
 	rm -f embed/github-markdown-dark.css
 
-## lint: Run gitleaks
-lint:
+## lint: Run golangci-lint and gitleaks
+lint: lint-go
 	gitleaks detect --source . --no-git -v
+
+## lint-go: Run golangci-lint
+lint-go:
+	$(GOLANGCI_LINT) run --timeout=5m ./...
 
 ## help: Show this help
 help:

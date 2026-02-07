@@ -153,7 +153,7 @@ make help    # Show all available targets
 make deps    # Download embedded assets
 make build   # Build the binary
 make test    # Run tests
-make lint    # Run gitleaks
+make lint    # Run golangci-lint + gitleaks
 make docker  # Build Docker image
 ```
 

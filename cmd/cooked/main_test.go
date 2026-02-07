@@ -116,8 +116,9 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 
 	// Verify the server is no longer listening.
-	_, err = http.Get(healthURL)
+	resp, err := http.Get(healthURL)
 	if err == nil {
+		resp.Body.Close()
 		t.Error("server still responding after shutdown")
 	}
 }
