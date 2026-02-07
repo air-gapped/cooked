@@ -1,0 +1,9 @@
+<pre><code>2026-01-15T10:00:00Z INFO  server started on :8080
+2026-01-15T10:00:01Z INFO  cache initialized ttl=5m max_size=1000
+2026-01-15T10:00:05Z INFO  GET /https://example.com/README.md 200 45ms
+2026-01-15T10:00:06Z WARN  upstream slow response url=https://slow.example.com/doc.md elapsed=2.5s
+2026-01-15T10:00:10Z INFO  GET /https://example.com/main.py 200 12ms cache=HIT
+2026-01-15T10:00:15Z ERROR fetch failed url=https://down.example.com/file.md err=&#34;connection refused&#34;
+2026-01-15T10:00:20Z INFO  GET /healthz 200 0ms
+2026-01-15T10:01:00Z INFO  cache evicted entries=3 reason=&#34;ttl expired&#34;
+</code></pre>

@@ -1,0 +1,54 @@
+<div class="cooked-code-block" data-language="python" data-line-count="47">
+  <div class="cooked-code-header">
+    <span class="cooked-code-language">python</span>
+    <button class="cooked-copy-btn" data-state="idle">Copy</button>
+  </div>
+<pre tabindex="0" class="chroma"><code><span class="line"><span class="ln"> 1</span><span class="cl"><span class="s2">&#34;&#34;&#34;Sample Python module for testing syntax highlighting.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="ln"> 2</span><span class="cl">
+</span></span><span class="line"><span class="ln"> 3</span><span class="cl"><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+</span></span><span class="line"><span class="ln"> 4</span><span class="cl"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterator</span>
+</span></span><span class="line"><span class="ln"> 5</span><span class="cl">
+</span></span><span class="line"><span class="ln"> 6</span><span class="cl">
+</span></span><span class="line"><span class="ln"> 7</span><span class="cl"><span class="nd">@dataclass</span>
+</span></span><span class="line"><span class="ln"> 8</span><span class="cl"><span class="k">class</span> <span class="nc">TreeNode</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln"> 9</span><span class="cl">    <span class="s2">&#34;&#34;&#34;A node in a binary tree.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="ln">10</span><span class="cl">
+</span></span><span class="line"><span class="ln">11</span><span class="cl">    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+</span></span><span class="line"><span class="ln">12</span><span class="cl">    <span class="n">left</span><span class="p">:</span> <span class="s2">&#34;TreeNode | None&#34;</span> <span class="o">=</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="ln">13</span><span class="cl">    <span class="n">right</span><span class="p">:</span> <span class="s2">&#34;TreeNode | None&#34;</span> <span class="o">=</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="ln">14</span><span class="cl">    <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+</span></span><span class="line"><span class="ln">15</span><span class="cl">
+</span></span><span class="line"><span class="ln">16</span><span class="cl">    <span class="k">def</span> <span class="nf">depth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">17</span><span class="cl">        <span class="s2">&#34;&#34;&#34;Return the depth of this subtree.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="ln">18</span><span class="cl">        <span class="n">left_d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="k">else</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="ln">19</span><span class="cl">        <span class="n">right_d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="k">else</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="ln">20</span><span class="cl">        <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">(</span><span class="n">left_d</span><span class="p">,</span> <span class="n">right_d</span><span class="p">)</span>
+</span></span><span class="line"><span class="ln">21</span><span class="cl">
+</span></span><span class="line"><span class="ln">22</span><span class="cl">    <span class="k">def</span> <span class="nf">inorder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+</span></span><span class="line"><span class="ln">23</span><span class="cl">        <span class="s2">&#34;&#34;&#34;Yield values in-order.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="ln">24</span><span class="cl">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">25</span><span class="cl">            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="o">.</span><span class="n">inorder</span><span class="p">()</span>
+</span></span><span class="line"><span class="ln">26</span><span class="cl">        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+</span></span><span class="line"><span class="ln">27</span><span class="cl">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">28</span><span class="cl">            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="o">.</span><span class="n">inorder</span><span class="p">()</span>
+</span></span><span class="line"><span class="ln">29</span><span class="cl">
+</span></span><span class="line"><span class="ln">30</span><span class="cl">
+</span></span><span class="line"><span class="ln">31</span><span class="cl"><span class="k">def</span> <span class="nf">build_tree</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TreeNode</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">32</span><span class="cl">    <span class="s2">&#34;&#34;&#34;Build a balanced BST from a sorted list.&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="ln">33</span><span class="cl">    <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">34</span><span class="cl">        <span class="k">return</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="ln">35</span><span class="cl">    <span class="n">mid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+</span></span><span class="line"><span class="ln">36</span><span class="cl">    <span class="k">return</span> <span class="n">TreeNode</span><span class="p">(</span>
+</span></span><span class="line"><span class="ln">37</span><span class="cl">        <span class="n">value</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="n">mid</span><span class="p">],</span>
+</span></span><span class="line"><span class="ln">38</span><span class="cl">        <span class="n">left</span><span class="o">=</span><span class="n">build_tree</span><span class="p">(</span><span class="n">values</span><span class="p">[:</span><span class="n">mid</span><span class="p">]),</span>
+</span></span><span class="line"><span class="ln">39</span><span class="cl">        <span class="n">right</span><span class="o">=</span><span class="n">build_tree</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]),</span>
+</span></span><span class="line"><span class="ln">40</span><span class="cl">    <span class="p">)</span>
+</span></span><span class="line"><span class="ln">41</span><span class="cl">
+</span></span><span class="line"><span class="ln">42</span><span class="cl">
+</span></span><span class="line"><span class="ln">43</span><span class="cl"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&#34;__main__&#34;</span><span class="p">:</span>
+</span></span><span class="line"><span class="ln">44</span><span class="cl">    <span class="n">tree</span> <span class="o">=</span> <span class="n">build_tree</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
+</span></span><span class="line"><span class="ln">45</span><span class="cl">    <span class="k">assert</span> <span class="n">tree</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span></span><span class="line"><span class="ln">46</span><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;Depth: </span><span class="si">{</span><span class="n">tree</span><span class="o">.</span><span class="n">depth</span><span class="p">()</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="ln">47</span><span class="cl">    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&#34;In-order: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">inorder</span><span class="p">())</span><span class="si">}</span><span class="s2">&#34;</span><span class="p">)</span>
+</span></span></code></pre>
+</div>
