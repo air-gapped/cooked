@@ -3,13 +3,10 @@ package render
 import (
 	"bytes"
 	"fmt"
-	gohtml "html"
 	"regexp"
 	"strings"
 
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/yuin/goldmark"
-	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -48,11 +45,7 @@ func NewMarkdownRenderer() *MarkdownRenderer {
 			extension.Footnote,
 			extension.DefinitionList,
 			extension.Typographer,
-			highlighting.NewHighlighting(
-				highlighting.WithFormatOptions(
-					chromahtml.WithClasses(true),
-				),
-			),
+			&ChromaHighlighting{},
 			&gmermaid.Extender{},
 		),
 		goldmark.WithParserOptions(
@@ -82,9 +75,7 @@ func (r *MarkdownRenderer) Render(source []byte) ([]byte, *MarkdownMeta, error) 
 		return nil, nil, fmt.Errorf("render markdown: %w", err)
 	}
 
-	result := wrapCodeBlocks(buf.Bytes(), meta.Languages)
-
-	return result, meta, nil
+	return buf.Bytes(), meta, nil
 }
 
 // extractMeta walks the AST to count headings, code blocks, and detect mermaid.
@@ -160,32 +151,4 @@ func stripFrontmatter(source []byte) ([]byte, string) {
 
 	// Return content after frontmatter
 	return source[len(match[0]):], title
-}
-
-var chromaBlockRe = regexp.MustCompile(`(?s)<pre tabindex="0" class="chroma"><code>(.*?)</code></pre>`)
-
-// wrapCodeBlocks wraps goldmark's chroma code blocks with the cooked-code-block
-// structure including a copy button, matching the CodeRenderer output.
-func wrapCodeBlocks(htmlContent []byte, languages []string) []byte {
-	langIdx := 0
-	return chromaBlockRe.ReplaceAllFunc(htmlContent, func(match []byte) []byte {
-		lang := ""
-		if langIdx < len(languages) {
-			lang = languages[langIdx]
-		}
-		langIdx++
-
-		var buf bytes.Buffer
-		fmt.Fprintf(&buf, `<div class="cooked-code-block" data-language="%s">`, gohtml.EscapeString(lang))
-		buf.WriteString("\n<div class=\"cooked-code-header\">\n")
-		if lang != "" {
-			fmt.Fprintf(&buf, `<span class="cooked-code-language">%s</span>`, gohtml.EscapeString(lang))
-			buf.WriteByte('\n')
-		}
-		buf.WriteString("<button class=\"cooked-copy-btn\" data-state=\"idle\">Copy</button>\n")
-		buf.WriteString("</div>\n")
-		buf.Write(match)
-		buf.WriteString("\n</div>")
-		return buf.Bytes()
-	})
 }
