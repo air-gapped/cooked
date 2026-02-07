@@ -238,6 +238,11 @@ const layoutCSS = `
     #cooked-toc li[data-level="6"] { padding-left: 60px; }
     #cooked-toc a { color: inherit; text-decoration: none; }
     #cooked-toc a:hover { text-decoration: underline; }
+    #cooked-toc li.active > a { color: #0969da; font-weight: 600; }
+    [data-theme="dark"] #cooked-toc li.active > a { color: #58a6ff; }
+    @media (prefers-color-scheme: dark) {
+      [data-theme="auto"] #cooked-toc li.active > a { color: #58a6ff; }
+    }
 
     .cooked-code-block { position: relative; margin: 16px 0; }
     .cooked-code-header {

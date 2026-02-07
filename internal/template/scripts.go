@@ -70,6 +70,42 @@ func writeScripts(buf *bytes.Buffer) {
       });
     })();
 
+    // TOC scroll sync
+    (function() {
+      var toc = document.getElementById('cooked-toc');
+      if (!toc) return;
+      var content = document.getElementById('cooked-content');
+      if (!content) return;
+      var headings = content.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
+      if (!headings.length) return;
+
+      var tocLinks = {};
+      toc.querySelectorAll('a[href^="#"]').forEach(function(a) {
+        tocLinks[a.getAttribute('href').slice(1)] = a;
+      });
+
+      var activeLi = null;
+      function setActive(id) {
+        if (activeLi) activeLi.classList.remove('active');
+        var a = tocLinks[id];
+        if (a) {
+          activeLi = a.parentElement;
+          activeLi.classList.add('active');
+          activeLi.scrollIntoView({ block: 'nearest' });
+        }
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            setActive(entry.target.id);
+          }
+        });
+      }, { rootMargin: '0px 0px -80% 0px' });
+
+      headings.forEach(function(h) { observer.observe(h); });
+    })();
+
     // Copy buttons on code blocks
     (function() {
       document.querySelectorAll('.cooked-copy-btn').forEach(function(btn) {
