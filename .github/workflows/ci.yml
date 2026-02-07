@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: arc-runner-set
     container:
-      image: golang:1.24
+      image: golang:1.25
     env:
       GOFLAGS: -buildvcs=false
     steps:
