@@ -32,34 +32,6 @@ func ParseUpstreamURL(rawPath string) (*url.URL, error) {
 	return u, nil
 }
 
-// CheckAllowedUpstream verifies that the upstream host matches one of the
-// allowed upstreams using exact or subdomain matching.
-// If allowedUpstreams is empty, all hosts are allowed.
-func CheckAllowedUpstream(host string, allowedUpstreams string) bool {
-	if allowedUpstreams == "" {
-		return true
-	}
-
-	// Strip port from host for matching
-	hostname := strings.ToLower(host)
-	if h, _, err := net.SplitHostPort(host); err == nil {
-		hostname = strings.ToLower(h)
-	}
-
-	entries := strings.Split(allowedUpstreams, ",")
-	for _, entry := range entries {
-		allowed := strings.ToLower(strings.TrimSpace(entry))
-		if allowed == "" {
-			continue
-		}
-		// Exact match or subdomain match (hostname ends with "."+allowed)
-		if hostname == allowed || strings.HasSuffix(hostname, "."+allowed) {
-			return true
-		}
-	}
-	return false
-}
-
 // IsPrivateAddress returns true if the given hostname resolves to a private/loopback address.
 // Used as a fast-fail SSRF check; real enforcement is at dial time via the custom DialContext.
 func IsPrivateAddress(hostname string) (bool, error) {

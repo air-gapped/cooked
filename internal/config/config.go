@@ -3,7 +3,9 @@ package config
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -31,7 +33,7 @@ func Parse(args []string) (*Config, error) {
 	cacheMaxSize := fs.String("cache-max-size", envOr("COOKED_CACHE_MAX_SIZE", "100MB"), "Max cache size (e.g. 100MB)")
 	fs.DurationVar(&cfg.FetchTimeout, "fetch-timeout", envDurationOr("COOKED_FETCH_TIMEOUT", 30*time.Second), "Upstream fetch timeout")
 	maxFileSize := fs.String("max-file-size", envOr("COOKED_MAX_FILE_SIZE", "5MB"), "Max file size to render (e.g. 5MB)")
-	fs.StringVar(&cfg.AllowedUpstreams, "allowed-upstreams", envOr("COOKED_ALLOWED_UPSTREAMS", ""), "Comma-separated allowed upstream host prefixes (required for private/internal networks)")
+	fs.StringVar(&cfg.AllowedUpstreams, "allowed-upstreams", envOr("COOKED_ALLOWED_UPSTREAMS", ""), "Comma-separated allowed upstreams: hostnames, *.wildcard, or CIDR ranges (e.g. \"cgit.internal,*.corp,10.0.0.0/8\")")
 	fs.StringVar(&cfg.BaseURL, "base-url", envOr("COOKED_BASE_URL", ""), "Public base URL of cooked (auto-detect from Host header if empty)")
 	fs.StringVar(&cfg.DefaultTheme, "default-theme", envOr("COOKED_DEFAULT_THEME", "auto"), "Default theme: auto, light, or dark")
 	fs.BoolVar(&cfg.TLSSkipVerify, "tls-skip-verify", envBoolOr("COOKED_TLS_SKIP_VERIFY", false), "Disable TLS certificate verification for upstream fetches")
@@ -51,6 +53,10 @@ func Parse(args []string) (*Config, error) {
 		return nil, fmt.Errorf("parse max-file-size: %w", err)
 	}
 
+	if err := validateAllowedUpstreams(cfg.AllowedUpstreams); err != nil {
+		return nil, fmt.Errorf("invalid allowed-upstreams: %w", err)
+	}
+
 	switch cfg.DefaultTheme {
 	case "auto", "light", "dark":
 	default:
@@ -58,6 +64,31 @@ func Parse(args []string) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// validateAllowedUpstreams checks that all entries in the comma-separated
+// allowlist are well-formed at startup time.
+func validateAllowedUpstreams(raw string) error {
+	if raw == "" {
+		return nil
+	}
+	for _, entry := range strings.Split(raw, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		switch {
+		case strings.Contains(entry, "/"):
+			if _, _, err := net.ParseCIDR(entry); err != nil {
+				return fmt.Errorf("invalid CIDR %q: %w", entry, err)
+			}
+		case strings.HasPrefix(entry, "*."):
+			if len(entry) <= 2 {
+				return fmt.Errorf("empty wildcard suffix in %q", entry)
+			}
+		}
+	}
+	return nil
 }
 
 func envOr(key, fallback string) string {

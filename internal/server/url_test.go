@@ -53,51 +53,6 @@ func TestParseUpstreamURL_Invalid(t *testing.T) {
 	}
 }
 
-func TestCheckAllowedUpstream(t *testing.T) {
-	tests := []struct {
-		host    string
-		allowed string
-		wantOK  bool
-	}{
-		// Empty allowed = allow all
-		{"example.com", "", true},
-		{"anything.com", "", true},
-
-		// Exact match
-		{"cgit.internal", "cgit.internal", true},
-		{"s3.internal", "cgit.internal,s3.internal", true},
-
-		// Subdomain match
-		{"sub.cgit.internal", "cgit.internal", true},
-		{"deep.sub.cgit.internal", "cgit.internal", true},
-
-		// F-04: Must NOT match — attacker-controlled suffix
-		{"cgit.internal.attacker.com", "cgit.internal", false},
-
-		// Not in list
-		{"evil.com", "cgit.internal,s3.internal", false},
-
-		// With port
-		{"cgit.internal:8080", "cgit.internal", true},
-
-		// Whitespace in allowed list
-		{"cgit.internal", " cgit.internal , s3.internal ", true},
-
-		// Case insensitive
-		{"CGIT.INTERNAL", "cgit.internal", true},
-		{"cgit.internal", "CGIT.INTERNAL", true},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.host+"_"+tc.allowed, func(t *testing.T) {
-			got := CheckAllowedUpstream(tc.host, tc.allowed)
-			if got != tc.wantOK {
-				t.Errorf("CheckAllowedUpstream(%q, %q) = %v, want %v", tc.host, tc.allowed, got, tc.wantOK)
-			}
-		})
-	}
-}
-
 func TestIsPrivateAddress_IPs(t *testing.T) {
 	tests := []struct {
 		addr    string
@@ -175,37 +130,6 @@ func FuzzParseUpstreamURL(f *testing.F) {
 		}
 		if u.Host == "" {
 			t.Error("accepted URL with empty host")
-		}
-	})
-}
-
-func FuzzCheckAllowedUpstream(f *testing.F) {
-	seeds := []struct {
-		host    string
-		allowed string
-	}{
-		{"example.com", ""},
-		{"cgit.internal", "cgit.internal"},
-		{"s3.internal", "cgit.internal,s3.internal"},
-		{"evil.com", "cgit.internal,s3.internal"},
-		{"cgit.internal:8080", "cgit.internal"},
-		{"", ""},
-		{"", "example.com"},
-		{"host", " host , other "},
-		{"例え.jp", "例え.jp"},
-		{"a.b.c.d.e", "a.b,c.d"},
-	}
-	for _, s := range seeds {
-		f.Add(s.host, s.allowed)
-	}
-
-	f.Fuzz(func(t *testing.T, host, allowed string) {
-		// Must never panic
-		got := CheckAllowedUpstream(host, allowed)
-
-		// If allowed list is empty, everything should be allowed
-		if allowed == "" && !got {
-			t.Error("empty allowed list should allow all hosts")
 		}
 	})
 }

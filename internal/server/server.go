@@ -29,21 +29,30 @@ type Server struct {
 	codeRender *render.CodeRenderer
 	tmpl       *cookedtemplate.Renderer
 	assets     fs.FS
+	allowlist  *Allowlist
 	mux        *http.ServeMux
 }
 
 // New creates a new cooked server with all dependencies.
 // Extra fetch options can be passed for testing (e.g. disabling SSRF protection).
 func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fetch.Option) *Server {
+	allowlist := ParseAllowlist(cfg.AllowedUpstreams)
+
 	// Build fetch client options.
 	var fetchOpts []fetch.Option
 	fetchOpts = append(fetchOpts, extraFetchOpts...)
 
+	// When an allowlist is configured, the operator has defined trusted
+	// upstreams — that IS the security boundary. Disable blanket SSRF
+	// dial-time blocking so private IPs (10.x, 172.16.x, etc.) work.
+	if allowlist != nil {
+		fetchOpts = append(fetchOpts, fetch.WithSSRFProtection(false))
+	}
+
 	// Add redirect validator that enforces the allowlist on redirect targets.
-	if cfg.AllowedUpstreams != "" {
-		allowed := cfg.AllowedUpstreams
+	if allowlist != nil {
 		fetchOpts = append(fetchOpts, fetch.WithRedirectValidator(func(target *url.URL) error {
-			if !CheckAllowedUpstream(target.Host, allowed) {
+			if !allowlist.Allows(target.Host) {
 				return fmt.Errorf("redirect target %q not in allowed upstreams", target.Host)
 			}
 			return nil
@@ -62,6 +71,7 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 		codeRender: render.NewCodeRenderer(),
 		tmpl:       cookedtemplate.NewRenderer(),
 		assets:     assets,
+		allowlist:  allowlist,
 		mux:        http.NewServeMux(),
 	}
 
@@ -125,14 +135,16 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check allowed upstreams
-	if !CheckAllowedUpstream(upstream.Host, s.cfg.AllowedUpstreams) {
+	// Check allowed upstreams (nil allowlist = allow all, falls through to SSRF)
+	if !s.allowlist.Allows(upstream.Host) {
 		s.renderError(w, rawUpstream, 403, "blocked", "This upstream is not in the allowed list")
 		return
 	}
 
-	// SSRF protection (only when allowed-upstreams is empty)
-	if s.cfg.AllowedUpstreams == "" {
+	// SSRF protection: when no allowlist is set, block private/loopback IPs.
+	// When an allowlist IS set, the operator has defined the trust boundary
+	// and SSRF dial-time blocking is disabled in the fetch client.
+	if s.allowlist == nil {
 		private, err := IsPrivateAddress(upstream.Host)
 		if err != nil {
 			s.renderError(w, rawUpstream, 502, "unreachable", fmt.Sprintf("Could not resolve host: %v", err))

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/air-gapped/cooked/internal/config"
-	"github.com/air-gapped/cooked/internal/fetch"
 )
 
 func newTestServer(t *testing.T, cfg *config.Config) *Server {
@@ -23,7 +22,7 @@ func newTestServer(t *testing.T, cfg *config.Config) *Server {
 			FetchTimeout:     10 * time.Second,
 			MaxFileSize:      5 * 1024 * 1024,
 			DefaultTheme:     "auto",
-			AllowedUpstreams: "127.0.0.1", // Allow localhost for tests
+			AllowedUpstreams: "127.0.0.0/8", // Allow loopback CIDR for tests
 		}
 	}
 
@@ -33,8 +32,9 @@ func newTestServer(t *testing.T, cfg *config.Config) *Server {
 		"github-markdown-dark.css":  {Data: []byte("/* dark */")},
 	}
 
-	// Disable SSRF dial protection for tests (httptest servers bind to 127.0.0.1).
-	return New(cfg, "v0.1.0-test", assets, fetch.WithSSRFProtection(false))
+	// When AllowedUpstreams is set, SSRF dial protection is automatically
+	// disabled by server.New(). No extra fetch options needed.
+	return New(cfg, "v0.1.0-test", assets)
 }
 
 func TestHealthz(t *testing.T) {
@@ -235,6 +235,90 @@ func TestSSRFProtection(t *testing.T) {
 
 	if resp.StatusCode != 403 {
 		t.Errorf("status = %d, want 403 for SSRF", resp.StatusCode)
+	}
+}
+
+// Regression test: private IPs must work when allowlisted via CIDR.
+// This is the key use case for air-gapped intranets.
+func TestAllowlistedPrivateIP(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("# Internal Doc\n"))
+	}))
+	defer upstream.Close()
+
+	// Use CIDR that covers 127.0.0.0/8 — the httptest server binds to 127.0.0.1.
+	// No explicit WithSSRFProtection(false) — the allowlist should handle it.
+	s := newTestServer(t, &config.Config{
+		Listen:           ":8080",
+		CacheTTL:         5 * time.Minute,
+		CacheMaxSize:     100 * 1024 * 1024,
+		FetchTimeout:     10 * time.Second,
+		MaxFileSize:      5 * 1024 * 1024,
+		DefaultTheme:     "auto",
+		AllowedUpstreams: "127.0.0.0/8",
+	})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/" + upstream.URL + "/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("status = %d, want 200 (private IP should be allowed via CIDR); body: %s", resp.StatusCode, body)
+	}
+}
+
+// Test wildcard allowlist blocks non-matching hosts.
+func TestWildcardAllowlistBlocks(t *testing.T) {
+	s := newTestServer(t, &config.Config{
+		Listen:           ":8080",
+		CacheTTL:         5 * time.Minute,
+		CacheMaxSize:     100 * 1024 * 1024,
+		FetchTimeout:     10 * time.Second,
+		MaxFileSize:      5 * 1024 * 1024,
+		DefaultTheme:     "auto",
+		AllowedUpstreams: "*.internal",
+	})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/https://evil.com/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != 403 {
+		t.Errorf("status = %d, want 403 for host not matching *.internal", resp.StatusCode)
+	}
+}
+
+// Test CIDR allowlist blocks IPs outside the range.
+func TestCIDRAllowlistBlocks(t *testing.T) {
+	s := newTestServer(t, &config.Config{
+		Listen:           ":8080",
+		CacheTTL:         5 * time.Minute,
+		CacheMaxSize:     100 * 1024 * 1024,
+		FetchTimeout:     10 * time.Second,
+		MaxFileSize:      5 * 1024 * 1024,
+		DefaultTheme:     "auto",
+		AllowedUpstreams: "10.0.0.0/8",
+	})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/http://11.0.0.1:8080/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != 403 {
+		t.Errorf("status = %d, want 403 for IP outside CIDR", resp.StatusCode)
 	}
 }
 

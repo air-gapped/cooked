@@ -135,6 +135,45 @@ func TestParse_InvalidCacheMaxSize(t *testing.T) {
 	}
 }
 
+func TestParse_AllowedUpstreams_Valid(t *testing.T) {
+	tests := []string{
+		"cgit.internal",
+		"cgit.internal,s3.internal",
+		"*.internal",
+		"*.internal,*.corp.example.com",
+		"10.0.0.0/8",
+		"10.0.0.0/8,172.16.0.0/12",
+		"fd00::/8",
+		"*.internal,10.0.0.0/8,gitea.specific.host",
+	}
+	for _, au := range tests {
+		t.Run(au, func(t *testing.T) {
+			_, err := Parse([]string{"--allowed-upstreams", au})
+			if err != nil {
+				t.Errorf("Parse with allowed-upstreams=%q failed: %v", au, err)
+			}
+		})
+	}
+}
+
+func TestParse_AllowedUpstreams_Invalid(t *testing.T) {
+	tests := []struct {
+		name  string
+		value string
+	}{
+		{"invalid CIDR mask", "10.0.0.0/33"},
+		{"bad CIDR format", "not-a-cidr/8"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := Parse([]string{"--allowed-upstreams", tc.value})
+			if err == nil {
+				t.Errorf("expected error for allowed-upstreams=%q, got nil", tc.value)
+			}
+		})
+	}
+}
+
 func TestParseByteSize(t *testing.T) {
 	tests := []struct {
 		input string

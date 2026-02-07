@@ -36,7 +36,7 @@ make build   # Build the binary
 | `--cache-max-size` | `COOKED_CACHE_MAX_SIZE` | `100MB` | Max cache size (e.g. 100MB) |
 | `--fetch-timeout` | `COOKED_FETCH_TIMEOUT` | `30s` | Upstream fetch timeout |
 | `--max-file-size` | `COOKED_MAX_FILE_SIZE` | `5MB` | Max file size to render (e.g. 5MB) |
-| `--allowed-upstreams` | `COOKED_ALLOWED_UPSTREAMS` | *(empty)* | Comma-separated allowed upstream hosts (exact or subdomain match) |
+| `--allowed-upstreams` | `COOKED_ALLOWED_UPSTREAMS` | *(empty)* | Comma-separated allowed upstreams: hostnames, `*.wildcard`, or CIDR ranges |
 | `--base-url` | `COOKED_BASE_URL` | *(auto-detect)* | Public base URL of cooked |
 | `--default-theme` | `COOKED_DEFAULT_THEME` | `auto` | Default theme: auto, light, or dark |
 | `--tls-skip-verify` | `COOKED_TLS_SKIP_VERIFY` | `false` | Disable TLS certificate verification for upstream fetches |
@@ -47,23 +47,38 @@ All flags have environment variable equivalents prefixed with `COOKED_`.
 
 ### Allowed upstreams
 
-The `--allowed-upstreams` flag restricts which upstream hosts cooked will fetch from. It takes a comma-separated list of hostnames. A request is allowed if the upstream host exactly matches an entry, or is a subdomain of an entry (e.g. `sub.cgit.internal` matches `cgit.internal`). Redirect targets are also validated against the allowlist.
+The `--allowed-upstreams` flag restricts which upstream hosts cooked will fetch from. It accepts a comma-separated list of three entry types:
+
+- **Hostnames** — exact match plus subdomain matching (e.g. `cgit.internal` also allows `sub.cgit.internal`)
+- **Wildcards** — `*.internal` matches any host ending in `.internal` (e.g. `foo.internal`, `a.b.internal`)
+- **CIDR ranges** — `10.0.0.0/8` matches IP-literal URLs in that range (e.g. `http://10.0.1.50/file.md`)
+
+Redirect targets are also validated against the allowlist.
 
 ```bash
 # Only allow fetching from two internal hosts
 ./cooked --allowed-upstreams="cgit.internal,gitea.corp.example.com"
-```
 
-In air-gapped environments with private IP upstreams (10.x, 172.16.x, etc.), you **must** set `--allowed-upstreams`. See the next section for why.
+# CIDR ranges for IP-based upstreams
+./cooked --allowed-upstreams="10.0.0.0/8,172.16.0.0/12"
+
+# Wildcard DNS patterns
+./cooked --allowed-upstreams="*.internal,*.corp.example.com"
+
+# Mixed: all three types together
+./cooked --allowed-upstreams="*.internal,10.0.0.0/8,gitea.specific.host"
+```
 
 ### Private IP protection (SSRF)
 
-cooked blocks requests to private and loopback IP ranges to prevent server-side request forgery (SSRF). IP validation is enforced at DNS resolution time to prevent TOCTOU attacks. The blocked ranges include:
+When `--allowed-upstreams` is **not set**, cooked blocks requests to private and loopback IP ranges to prevent server-side request forgery (SSRF). The blocked ranges include:
 
 - IPv4/IPv6 loopback, private (RFC 1918), link-local, multicast, unspecified
 - CGNAT (`100.64.0.0/10`)
 
-The pre-fetch hostname check provides fast-fail when `--allowed-upstreams` is empty. The dial-time IP check is always active as defense in depth. Redirects are capped at 5 hops and validated against the allowlist when set.
+When `--allowed-upstreams` **is set**, the allowlist becomes the trust boundary and private-IP blocking is disabled. This is required for air-gapped environments where upstreams are on private networks (10.x, 172.16.x, 192.168.x).
+
+Redirects are capped at 5 hops and validated against the allowlist when set.
 
 ### HTML sanitization
 
@@ -89,7 +104,7 @@ docker run -p 8080:8080 cooked
 
 ```bash
 docker run -p 8080:8080 cooked \
-  --allowed-upstreams="cgit.internal,gitea.corp.example.com"
+  --allowed-upstreams="*.internal,10.0.0.0/8,gitea.corp.example.com"
 ```
 
 ### Internal CA certificates
@@ -110,7 +125,7 @@ services:
     image: cooked:latest
     ports:
       - "8080:8080"
-    command: ["--allowed-upstreams=cgit.internal,gitea.corp.example.com"]
+    command: ["--allowed-upstreams=*.internal,10.0.0.0/8,gitea.corp.example.com"]
 ```
 
 ## Response headers
