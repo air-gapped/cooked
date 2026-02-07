@@ -31,7 +31,7 @@ func Parse(args []string) (*Config, error) {
 	cacheMaxSize := fs.String("cache-max-size", envOr("COOKED_CACHE_MAX_SIZE", "100MB"), "Max cache size (e.g. 100MB)")
 	fs.DurationVar(&cfg.FetchTimeout, "fetch-timeout", envDurationOr("COOKED_FETCH_TIMEOUT", 30*time.Second), "Upstream fetch timeout")
 	maxFileSize := fs.String("max-file-size", envOr("COOKED_MAX_FILE_SIZE", "5MB"), "Max file size to render (e.g. 5MB)")
-	fs.StringVar(&cfg.AllowedUpstreams, "allowed-upstreams", envOr("COOKED_ALLOWED_UPSTREAMS", ""), "Comma-separated allowed upstream host prefixes")
+	fs.StringVar(&cfg.AllowedUpstreams, "allowed-upstreams", envOr("COOKED_ALLOWED_UPSTREAMS", ""), "Comma-separated allowed upstream host prefixes (required for private/internal networks)")
 	fs.StringVar(&cfg.BaseURL, "base-url", envOr("COOKED_BASE_URL", ""), "Public base URL of cooked (auto-detect from Host header if empty)")
 	fs.StringVar(&cfg.DefaultTheme, "default-theme", envOr("COOKED_DEFAULT_THEME", "auto"), "Default theme: auto, light, or dark")
 	fs.BoolVar(&cfg.TLSSkipVerify, "tls-skip-verify", envBoolOr("COOKED_TLS_SKIP_VERIFY", false), "Disable TLS certificate verification for upstream fetches")

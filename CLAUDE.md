@@ -95,12 +95,14 @@ When in doubt about ANY operation that could lose work, ask first.
 
 1. **CLI flags** — Add flag definition with env var fallback in `cmd/cooked/main.go`
 2. **`.claude/skills/`** — Update the appropriate skill
-3. **SPEC.md** — Update if the feature changes external behavior
+3. **README.md** — Update user-facing documentation (configuration, security, usage)
+
+Note: SPEC.md is the build specification, not user documentation.
 
 **Checklist before completing a feature:**
 - [ ] Is the CLI flag documented with `--help` text?
 - [ ] Is the feature documented in the appropriate skill?
-- [ ] Does SPEC.md reflect the current behavior?
+- [ ] Is README.md updated with user-facing documentation?
 
 Undocumented features are incomplete features.
 
