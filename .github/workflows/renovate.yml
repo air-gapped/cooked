@@ -16,7 +16,7 @@ jobs:
   renovate:
     runs-on: arc-runner-set
     container:
-      image: ghcr.io/renovatebot/renovate:43
+      image: node:24-slim
     steps:
       - uses: actions/checkout@v4
 
@@ -26,9 +26,10 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Run Renovate
+      - name: Install and run Renovate
         env:
           RENOVATE_TOKEN: ${{ steps.app-token.outputs.token }}
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           LOG_LEVEL: info
-        run: renovate
+        run: |
+          npx --yes renovate@43
