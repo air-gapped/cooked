@@ -26,12 +26,12 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Install git
-        run: apt-get update && apt-get install -y --no-install-recommends git
+      - name: Install dependencies
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
 
       - name: Run Renovate
         env:
           RENOVATE_TOKEN: ${{ steps.app-token.outputs.token }}
           RENOVATE_REPOSITORIES: ${{ github.repository }}
-          LOG_LEVEL: debug
+          LOG_LEVEL: info
         run: npx --yes renovate@43
