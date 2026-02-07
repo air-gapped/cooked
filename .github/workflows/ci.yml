@@ -17,7 +17,7 @@ jobs:
     env:
       GOFLAGS: -buildvcs=false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install lint tools
         run: |
