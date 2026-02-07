@@ -65,7 +65,7 @@ func (r *Renderer) RenderLanding(version, defaultTheme string) []byte {
       <button type="submit">Cook it</button>
     </form>
     <p style="margin-top:16px;font-size:13px;">
-      cooked %s
+      cooked ` + html.EscapeString(version) + `
     </p>
   </div>
   <!-- cooked: scripts -->
