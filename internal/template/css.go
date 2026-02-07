@@ -212,8 +212,24 @@ const layoutCSS = `
     }
     .cooked-controls button:hover { background: rgba(128,128,128,0.1); }
 
-    main { max-width: 980px; margin: 0 auto; padding: 32px 16px; }
-    .markdown-body { font-size: 16px; line-height: 1.5; word-wrap: break-word; }
+    main { max-width: 1012px; margin: 0 auto; padding: 32px 16px; }
+    .markdown-body {
+      font-size: 16px; line-height: 1.5; word-wrap: break-word;
+      border: 1px solid #d0d7de; border-radius: 6px;
+      padding: 32px 40px;
+    }
+    [data-theme="dark"] .markdown-body { border-color: #30363d; }
+    @media (prefers-color-scheme: dark) {
+      [data-theme="auto"] .markdown-body { border-color: #30363d; }
+    }
+    .markdown-body hr {
+      height: 4px; padding: 0; margin: 24px 0;
+      background-color: #d0d7de; border: 0; border-radius: 2px;
+    }
+    [data-theme="dark"] .markdown-body hr { background-color: #30363d; }
+    @media (prefers-color-scheme: dark) {
+      [data-theme="auto"] .markdown-body hr { background-color: #30363d; }
+    }
 
     #cooked-toc {
       position: fixed; top: 32px; left: 0; bottom: 0; width: 280px;
@@ -282,5 +298,6 @@ const layoutCSS = `
     @media (max-width: 768px) {
       #cooked-toc { width: 100%; }
       main { padding: 16px 8px; }
+      .markdown-body { padding: 16px; border-radius: 0; border-left: 0; border-right: 0; }
     }
 `
