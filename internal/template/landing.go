@@ -44,11 +44,13 @@ func (r *Renderer) RenderLanding(version, defaultTheme string) []byte {
       cursor: pointer;
     }
     .cooked-landing-form button:hover { background: #0860ca; }
+    [data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
     [data-theme="dark"] .cooked-landing p { color: #8b949e; }
     [data-theme="dark"] .cooked-landing-form input {
       border-color: rgba(128,128,128,0.3); background: #161b22; color: #e6edf3;
     }
     @media (prefers-color-scheme: dark) {
+      [data-theme="auto"] body { background: #0d1117; color: #e6edf3; }
       [data-theme="auto"] .cooked-landing p { color: #8b949e; }
       [data-theme="auto"] .cooked-landing-form input {
         border-color: rgba(128,128,128,0.3); background: #161b22; color: #e6edf3;
