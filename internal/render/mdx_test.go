@@ -125,6 +125,88 @@ func TestPreprocessMDX_JSXExpressions(t *testing.T) {
 	}
 }
 
+func FuzzPreprocessMDX(f *testing.F) {
+	seeds := []string{
+		// Real MDX content
+		"---\ntitle: Hello\n---\n\nimport Tabs from '@theme/Tabs';\n\n# Hello\n",
+		"<TabItem label=\"npm\">\n\n```bash\nnpm install\n```\n\n</TabItem>",
+		"<Tabs>\n<TabItem label=\"npm\">content</TabItem>\n</Tabs>",
+		"export default function Layout() {}",
+		"import { useState } from 'react';",
+		// Self-closing JSX
+		"<CustomComponent />",
+		"<Widget prop=\"value\" />",
+		// JSX expressions
+		"Hello {props.name}, count is {count}.",
+		// Nested braces
+		"Text {outer {inner}} end",
+		"{{{deeply nested}}}",
+		// Malformed JSX
+		"<Unclosed",
+		"<Partial label=\"no-close>content",
+		"</Orphan>",
+		"<Not A Tag>",
+		"< Component />",
+		// Attribute injection
+		`<Tab label="x" onclick="evil()">content</Tab>`,
+		`<Tab title='"><script>alert(1)</script>'>hi</Tab>`,
+		// Unicode
+		"<Comp label=\"日本語\" />\n",
+		"import 变量 from '模块';\n",
+		"---\ntitle: Ünïcödé\n---\n\n# Héllo\n",
+		// Empty and minimal
+		"",
+		"\n",
+		"---\n---\n",
+		"plain markdown with no JSX at all",
+		// Large nested structure
+		"<Outer><Middle><Inner>deep</Inner></Middle></Outer>",
+		// Mixed content
+		"# Title\n\nimport X from 'x';\n\n<A />\n\nText {expr}\n\nexport const y = 1;\n",
+	}
+	for _, s := range seeds {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		got := PreprocessMDX([]byte(input))
+
+		// Determinism: same input must produce same output
+		got2 := PreprocessMDX([]byte(input))
+		if string(got) != string(got2) {
+			t.Errorf("non-deterministic output for input %q", input)
+		}
+
+		// Lines present in the input that match importRe must be stripped
+		// (unless inside frontmatter). We check exact line presence in
+		// output to avoid substring false positives.
+		outputLines := make(map[string]bool)
+		for _, ol := range strings.Split(string(got), "\n") {
+			outputLines[ol] = true
+		}
+		inFM := false
+		for i, line := range strings.Split(input, "\n") {
+			trimmed := strings.TrimSpace(line)
+			if i == 0 && trimmed == "---" {
+				inFM = true
+				continue
+			}
+			if inFM {
+				if trimmed == "---" {
+					inFM = false
+				}
+				continue
+			}
+			if importRe.MatchString(trimmed) && outputLines[line] {
+				t.Errorf("import line not stripped from output: %q", line)
+			}
+			if exportRe.MatchString(trimmed) && outputLines[line] {
+				t.Errorf("export line not stripped from output: %q", line)
+			}
+		}
+	})
+}
+
 func TestPreprocessMDX_FullDocument(t *testing.T) {
 	input := `---
 title: Getting Started

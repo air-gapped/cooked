@@ -33,21 +33,32 @@ func init() {
 // HTML strips dangerous elements and event handlers from HTML content.
 // This processes the HTML after goldmark rendering but BEFORE cooked's own
 // scripts are injected (so cooked's scripts are never stripped).
+//
+// Stripping loops until stable to prevent nested tag evasion
+// (e.g. "<scr<script>ipt>" reassembling after inner tag removal).
 func HTML(input []byte) []byte {
 	s := string(input)
 
-	// First pass: remove full blocks (tag + content + closing tag)
-	for _, re := range blockPatterns {
-		s = re.ReplaceAllString(s, "")
-	}
+	for {
+		prev := s
 
-	// Second pass: remove any remaining self-closing or orphaned tags
-	for _, re := range selfClosingPatterns {
-		s = re.ReplaceAllString(s, "")
-	}
+		// Remove full blocks (tag + content + closing tag)
+		for _, re := range blockPatterns {
+			s = re.ReplaceAllString(s, "")
+		}
 
-	// Remove on* event handler attributes
-	s = eventHandlerRe.ReplaceAllString(s, "")
+		// Remove any remaining self-closing or orphaned tags
+		for _, re := range selfClosingPatterns {
+			s = re.ReplaceAllString(s, "")
+		}
+
+		// Remove on* event handler attributes
+		s = eventHandlerRe.ReplaceAllString(s, "")
+
+		if s == prev {
+			break
+		}
+	}
 
 	return []byte(s)
 }

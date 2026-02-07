@@ -105,6 +105,95 @@ func TestHTML_PreservesImages(t *testing.T) {
 	}
 }
 
+func FuzzSanitizeHTML(f *testing.F) {
+	seeds := []string{
+		// XSS vectors
+		`<script>alert('xss')</script>`,
+		`<img onerror="alert(1)" src=x>`,
+		`<div onclick="evil()">click</div>`,
+		`<body onload="alert('xss')">`,
+		`<iframe src="javascript:alert(1)"></iframe>`,
+		`<object data="evil.swf"></object>`,
+		`<embed src="evil.swf">`,
+		`<form action="evil"><input type="text"></form>`,
+		// Encoded payloads
+		`<scr` + `ipt>alert(1)</sc` + `ript>`,
+		`<SCRIPT>alert(1)</SCRIPT>`,
+		`<Script>alert(1)</Script>`,
+		// Malformed tags
+		`<script`,
+		`<script >`,
+		`<script/src="evil.js">`,
+		`</script>`,
+		`<iframe src="x"`,
+		`<scr ipt>alert(1)</scr ipt>`,
+		// Nested dangerous elements
+		`<div><script><script>double</script></script></div>`,
+		`<script><iframe>nested</iframe></script>`,
+		`<form><iframe></iframe></form>`,
+		// Event handlers in various forms
+		`<a ONMOUSEOVER="evil()">link</a>`,
+		`<div OnClick='evil()'>test</div>`,
+		`<img onerror=evil() src=x>`,
+		`<div onmouseenter="evil()" onmouseleave="evil()">both</div>`,
+		// Safe content that must survive
+		`<h1>Title</h1><p>Hello <strong>world</strong></p>`,
+		`<a href="https://example.com">link</a>`,
+		`<img src="photo.jpg" alt="image">`,
+		`<details><summary>Click</summary>Content</details>`,
+		`<pre><code>console.log('hi')</code></pre>`,
+		// Unicode
+		`<script>alert('日本語')</script>`,
+		`<p>Ünïcödé content</p>`,
+		// Edge cases
+		"",
+		"<>",
+		"plain text with no tags",
+		`<div style="color:red">styled</div>`,
+		string(make([]byte, 4096)),
+	}
+	for _, s := range seeds {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		got := HTML([]byte(input))
+
+		// Determinism
+		got2 := HTML([]byte(input))
+		if string(got) != string(got2) {
+			t.Errorf("non-deterministic output for input %q", input)
+		}
+
+		output := string(got)
+
+		// Output must not match the sanitizer's own dangerous patterns.
+		// Block patterns: <tag ...>...</tag>
+		for _, re := range blockPatterns {
+			if re.MatchString(output) {
+				t.Errorf("output matches block pattern: %s", output)
+			}
+		}
+		// Self-closing patterns: <tag ...> or <tag .../>
+		for _, re := range selfClosingPatterns {
+			if re.MatchString(output) {
+				t.Errorf("output matches self-closing pattern: %s", output)
+			}
+		}
+
+		// Output must not contain event handlers
+		if eventHandlerRe.MatchString(output) {
+			t.Errorf("output contains event handler: %s", output)
+		}
+
+		// Idempotency: sanitizing twice should equal sanitizing once
+		got3 := HTML(got)
+		if string(got3) != output {
+			t.Errorf("not idempotent: single=%q double=%q", output, string(got3))
+		}
+	})
+}
+
 func TestContainsDangerousContent(t *testing.T) {
 	if !ContainsDangerousContent(`<script>alert('hi')</script>`) {
 		t.Error("should detect script")
