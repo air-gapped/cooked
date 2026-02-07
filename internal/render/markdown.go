@@ -3,6 +3,7 @@ package render
 import (
 	"bytes"
 	"fmt"
+	gohtml "html"
 	"regexp"
 	"strings"
 
@@ -22,6 +23,7 @@ type MarkdownMeta struct {
 	HeadingCount   int
 	HasMermaid     bool
 	CodeBlockCount int
+	Languages      []string // info-string languages in document order
 	Headings       []Heading
 	Title          string // from first H1 or frontmatter
 }
@@ -80,7 +82,9 @@ func (r *MarkdownRenderer) Render(source []byte) ([]byte, *MarkdownMeta, error) 
 		return nil, nil, fmt.Errorf("render markdown: %w", err)
 	}
 
-	return buf.Bytes(), meta, nil
+	result := wrapCodeBlocks(buf.Bytes(), meta.Languages)
+
+	return result, meta, nil
 }
 
 // extractMeta walks the AST to count headings, code blocks, and detect mermaid.
@@ -117,6 +121,11 @@ func extractMeta(doc ast.Node, source []byte, meta *MarkdownMeta) {
 
 		case *ast.FencedCodeBlock:
 			meta.CodeBlockCount++
+			lang := ""
+			if node.Info != nil {
+				lang = string(node.Language(source))
+			}
+			meta.Languages = append(meta.Languages, lang)
 
 		default:
 			// mermaid extension transforms fenced code blocks into its own node type
@@ -151,4 +160,32 @@ func stripFrontmatter(source []byte) ([]byte, string) {
 
 	// Return content after frontmatter
 	return source[len(match[0]):], title
+}
+
+var chromaBlockRe = regexp.MustCompile(`(?s)<pre tabindex="0" class="chroma"><code>(.*?)</code></pre>`)
+
+// wrapCodeBlocks wraps goldmark's chroma code blocks with the cooked-code-block
+// structure including a copy button, matching the CodeRenderer output.
+func wrapCodeBlocks(htmlContent []byte, languages []string) []byte {
+	langIdx := 0
+	return chromaBlockRe.ReplaceAllFunc(htmlContent, func(match []byte) []byte {
+		lang := ""
+		if langIdx < len(languages) {
+			lang = languages[langIdx]
+		}
+		langIdx++
+
+		var buf bytes.Buffer
+		fmt.Fprintf(&buf, `<div class="cooked-code-block" data-language="%s">`, gohtml.EscapeString(lang))
+		buf.WriteString("\n<div class=\"cooked-code-header\">\n")
+		if lang != "" {
+			fmt.Fprintf(&buf, `<span class="cooked-code-language">%s</span>`, gohtml.EscapeString(lang))
+			buf.WriteByte('\n')
+		}
+		buf.WriteString("<button class=\"cooked-copy-btn\" data-state=\"idle\">Copy</button>\n")
+		buf.WriteString("</div>\n")
+		buf.Write(match)
+		buf.WriteString("\n</div>")
+		return buf.Bytes()
+	})
 }

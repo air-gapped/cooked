@@ -4,14 +4,26 @@
 <h3 id="get-an-api-key">Get an API Key</h3>
 <p>Sign up at the dashboard to get your key.</p>
 <h3 id="configure-the-client">Configure the Client</h3>
+<div class="cooked-code-block" data-language="go">
+<div class="cooked-code-header">
+<span class="cooked-code-language">go</span>
+<button class="cooked-copy-btn" data-state="idle">Copy</button>
+</div>
 <pre tabindex="0" class="chroma"><code><span class="line"><span class="cl"><span class="nx">client</span> <span class="o">:=</span> <span class="nx">sdk</span><span class="p">.</span><span class="nf">NewClient</span><span class="p">(</span>
 </span></span><span class="line"><span class="cl">    <span class="nx">sdk</span><span class="p">.</span><span class="nf">WithAPIKey</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nf">Getenv</span><span class="p">(</span><span class="s">&#34;API_KEY&#34;</span><span class="p">)),</span>
 </span></span><span class="line"><span class="cl">    <span class="nx">sdk</span><span class="p">.</span><span class="nf">WithTimeout</span><span class="p">(</span><span class="mi">30</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">),</span>
 </span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span></code></pre><h3 id="make-your-first-request">Make Your First Request</h3>
+</span></span></code></pre>
+</div><h3 id="make-your-first-request">Make Your First Request</h3>
+<div class="cooked-code-block" data-language="go">
+<div class="cooked-code-header">
+<span class="cooked-code-language">go</span>
+<button class="cooked-copy-btn" data-state="idle">Copy</button>
+</div>
 <pre tabindex="0" class="chroma"><code><span class="line"><span class="cl"><span class="nx">resp</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">client</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="s">&#34;/users&#34;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> 
-</span></span></code></pre><h2 id="endpoints">Endpoints</h2>
+</span></span></code></pre>
+</div><h2 id="endpoints">Endpoints</h2>
 <p>All REST endpoints use JSON:</p>
 <table>
 <thead>
@@ -40,10 +52,16 @@
 </tbody>
 </table>
 <p>GraphQL endpoint: <code>/graphql</code></p>
+<div class="cooked-code-block" data-language="graphql">
+<div class="cooked-code-header">
+<span class="cooked-code-language">graphql</span>
+<button class="cooked-copy-btn" data-state="idle">Copy</button>
+</div>
 <pre tabindex="0" class="chroma"><code><span class="line"><span class="cl"><span class="kd">query</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nc">users</span><span class="p">(</span><span class="py">first</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> 
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="p">}</span><span class="w">
-</span></span></span></code></pre><h2 id="error-codes">Error Codes</h2>
+</span></span></span></code></pre>
+</div><h2 id="error-codes">Error Codes</h2>
 <table>
 <thead>
 <tr>
