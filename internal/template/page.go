@@ -255,6 +255,7 @@ func writeHeader(buf *bytes.Buffer, data PageData, escapedURL, truncatedURL stri
           %s>
     <div class="cooked-meta">
       <a id="cooked-source-link" href="%s" title="%s">%s</a>
+      <button class="cooked-copy-url" id="cooked-copy-url" title="Copy URL">&#x2398;</button>
 `,
 		data.UpstreamStatus,
 		data.FileSize,
@@ -265,7 +266,8 @@ func writeHeader(buf *bytes.Buffer, data PageData, escapedURL, truncatedURL stri
 
 	if data.LastModified != "" {
 		relative := formatRelativeTime(data.LastModified)
-		fmt.Fprintf(buf, `      <time id="cooked-modified" datetime="%s" title="%s">Modified %s</time>
+		fmt.Fprintf(buf, `      <span class="cooked-divider"></span>
+      <time id="cooked-modified" datetime="%s" title="%s">Modified %s</time>
 `,
 			html.EscapeString(data.LastModified),
 			html.EscapeString(data.LastModified),
@@ -273,7 +275,9 @@ func writeHeader(buf *bytes.Buffer, data PageData, escapedURL, truncatedURL stri
 		)
 	}
 
-	fmt.Fprintf(buf, `      <span id="cooked-size">%s</span>
+	fmt.Fprintf(buf, `      <span class="cooked-divider"></span>
+      <span id="cooked-size">%s</span>
+      <span class="cooked-divider"></span>
       <span id="cooked-type">%s</span>
     </div>
     <div class="cooked-controls">
@@ -281,6 +285,13 @@ func writeHeader(buf *bytes.Buffer, data PageData, escapedURL, truncatedURL stri
 		html.EscapeString(formatFileSize(data.FileSize)),
 		html.EscapeString(contentTypeLabel(data.ContentType)),
 	)
+
+	copyLabel := "Copy Source"
+	if data.ContentType == render.TypeMarkdown || data.ContentType == render.TypeMDX {
+		copyLabel = "Copy as Markdown"
+	}
+	fmt.Fprintf(buf, "      <button class=\"cooked-copy-md\" id=\"cooked-copy-md\" title=\"%s\">&#x1F4CB; %s</button>\n",
+		copyLabel, copyLabel)
 
 	if len(data.Headings) >= 3 {
 		fmt.Fprintf(buf, "      <button id=\"cooked-toc-toggle\" title=\"Table of contents\">&#9776;</button>\n")

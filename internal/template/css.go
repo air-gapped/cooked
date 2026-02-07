@@ -201,16 +201,26 @@ const layoutCSS = `
       }
     }
 
-    .cooked-meta { display: flex; align-items: center; gap: 12px; overflow: hidden; flex: 1; }
+    .cooked-meta { display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1; }
     .cooked-meta a { color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .cooked-meta a:hover { text-decoration: underline; }
     .cooked-meta span, .cooked-meta time { white-space: nowrap; }
+    .cooked-divider { width: 1px; height: 12px; background: rgba(128,128,128,0.4); flex-shrink: 0; }
+    .cooked-copy-url {
+      background: none; border: none; cursor: pointer; padding: 0 2px;
+      color: inherit; opacity: 0.6; font-size: 12px; flex-shrink: 0; line-height: 1;
+    }
+    .cooked-copy-url:hover { opacity: 1; }
     .cooked-controls { display: flex; gap: 4px; }
     .cooked-controls button {
       background: none; border: 1px solid rgba(128,128,128,0.3); border-radius: 4px;
       cursor: pointer; padding: 2px 6px; font-size: 14px; color: inherit;
     }
     .cooked-controls button:hover { background: rgba(128,128,128,0.1); }
+    .cooked-copy-md {
+      font-size: 11px !important; padding: 2px 8px !important;
+      display: flex; align-items: center; gap: 4px;
+    }
 
     main { max-width: 1012px; margin: 0 auto; padding: 32px 16px; }
     .markdown-body {

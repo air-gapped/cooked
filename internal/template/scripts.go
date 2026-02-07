@@ -106,6 +106,52 @@ func writeScripts(buf *bytes.Buffer) {
       headings.forEach(function(h) { observer.observe(h); });
     })();
 
+    // Copy URL button
+    (function() {
+      var btn = document.getElementById('cooked-copy-url');
+      if (!btn) return;
+      var link = document.getElementById('cooked-source-link');
+      if (!link) return;
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(link.href).then(function() {
+          btn.textContent = '\u2713';
+          setTimeout(function() { btn.innerHTML = '\u2398'; }, 1500);
+        });
+      });
+    })();
+
+    // Copy as Markdown / Copy Source button
+    (function() {
+      var btn = document.getElementById('cooked-copy-md');
+      if (!btn) return;
+      var upstreamURL = document.documentElement.getAttribute('data-upstream-url');
+      if (!upstreamURL) return;
+      var originalHTML = btn.innerHTML;
+
+      btn.addEventListener('click', function() {
+        btn.disabled = true;
+        btn.textContent = 'Fetching\u2026';
+        fetch(upstreamURL).then(function(r) {
+          if (!r.ok) throw new Error(r.status);
+          return r.text();
+        }).then(function(text) {
+          return navigator.clipboard.writeText(text);
+        }).then(function() {
+          btn.innerHTML = '\u2713 Copied!';
+          setTimeout(function() {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+          }, 2000);
+        }).catch(function() {
+          btn.textContent = 'Failed';
+          setTimeout(function() {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+          }, 2000);
+        });
+      });
+    })();
+
     // Copy buttons on code blocks
     (function() {
       document.querySelectorAll('.cooked-copy-btn').forEach(function(btn) {
