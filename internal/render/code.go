@@ -23,7 +23,6 @@ func NewCodeRenderer() *CodeRenderer {
 		formatter: chromahtml.New(
 			chromahtml.WithClasses(true),
 			chromahtml.WithLineNumbers(true),
-			chromahtml.WithLineNumberPad(0),
 		),
 	}
 }
