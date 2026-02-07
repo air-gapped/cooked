@@ -26,7 +26,10 @@ FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 
+WORKDIR /app
+
 COPY --from=builder /cooked /usr/local/bin/cooked
+COPY README.md /app/README.md
 
 EXPOSE 8080
 
