@@ -102,7 +102,7 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
-	w.Write([]byte("OK"))
+	fmt.Fprint(w, "OK")
 }
 
 func (s *Server) handleLanding(w http.ResponseWriter, r *http.Request) {
