@@ -23,7 +23,7 @@ require (
 	github.com/mna/pigeon v1.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.1.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.7.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
