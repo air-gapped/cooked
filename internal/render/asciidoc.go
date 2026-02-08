@@ -7,6 +7,7 @@ import (
 
 	"github.com/bytesparadise/libasciidoc"
 	"github.com/bytesparadise/libasciidoc/pkg/configuration"
+	logrus "github.com/sirupsen/logrus"
 )
 
 // includeRe matches AsciiDoc include:: directives that would try to read local files.
@@ -16,7 +17,9 @@ var includeRe = regexp.MustCompile(`(?m)^(include::)(.+\[.*\])\s*$`)
 type AsciiDocRenderer struct{}
 
 // NewAsciiDocRenderer creates a new AsciiDoc renderer.
+// Silences logrus output from libasciidoc to keep our JSON logging clean.
 func NewAsciiDocRenderer() *AsciiDocRenderer {
+	logrus.SetLevel(logrus.FatalLevel)
 	return &AsciiDocRenderer{}
 }
 
