@@ -10,9 +10,7 @@ permissions:
 
 jobs:
   release-please:
-    runs-on: arc-runner-set
-    container:
-      image: alpine:3.23
+    runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -32,15 +30,15 @@ jobs:
   build-binaries:
     needs: release-please
     if: needs.release-please.outputs.release_created
-    runs-on: arc-runner-set
-    container:
-      image: golang:1.25
-    env:
-      GOFLAGS: -buildvcs=false
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
       - name: Download embedded assets
         run: make deps
@@ -75,46 +73,35 @@ jobs:
   docker:
     needs: release-please
     if: needs.release-please.outputs.release_created
-    runs-on: arc-runner-set
-    container:
-      image: gcr.io/kaniko-project/executor:v1.24.0-debug
+    runs-on: ubuntu-latest
     steps:
-      - name: Build and push to GHCR
+      - uses: actions/checkout@v6
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GIT_USERNAME: ${{ github.actor }}
-          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${{ needs.release-please.outputs.tag_name }}"
-          VERSION="${TAG#v}"
-          MAJOR="${VERSION%%.*}"
-          MINOR="${VERSION%.*}"
-          REPO="ghcr.io/${{ github.repository }}"
-          SHA="${{ github.sha }}"
-          DATE="${{ github.event.head_commit.timestamp }}"
-
-          # Configure GHCR registry auth
-          AUTH=$(echo -n "${{ github.actor }}:${GITHUB_TOKEN}" | base64 | tr -d '\n')
-          mkdir -p /kaniko/.docker
-          printf '{"auths":{"ghcr.io":{"auth":"%s"}}}' "$AUTH" > /kaniko/.docker/config.json
-
-          /kaniko/executor \
-            --context="git://github.com/${{ github.repository }}.git#${{ github.ref }}#${{ github.sha }}" \
-            --dockerfile=Dockerfile \
-            --build-arg="LDFLAGS=-X main.version=${TAG} -X main.commit=${SHA} -X main.date=${DATE}" \
-            --destination="${REPO}:${VERSION}" \
-            --destination="${REPO}:${MINOR}" \
-            --destination="${REPO}:${MAJOR}" \
-            --destination="${REPO}:latest" \
-            --destination="${REPO}:sha-${SHA:0:7}" \
-            --push-retry=3
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        with:
+          context: .
+          push: true
+          build-args: |
+            LDFLAGS=-X main.version=${{ needs.release-please.outputs.tag_name }} -X main.commit=${{ github.sha }} -X main.date=${{ github.event.head_commit.timestamp }}
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ needs.release-please.outputs.tag_name }}
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
 
   upload-assets:
     needs: [release-please, build-binaries]
     if: needs.release-please.outputs.release_created
-    runs-on: arc-runner-set
-    container:
-      image: alpine:3.23
+    runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v7
