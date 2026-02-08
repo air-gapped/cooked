@@ -1,0 +1,26 @@
+= Hello World
+
+This is a basic AsciiDoc document with *bold*, _italic_, and `inline code`.
+
+== Section One
+
+A paragraph under section one.
+
+* Item one
+* Item two
+* Item three
+
+== Section Two
+
+A paragraph with a https://example.com[link].
+
+[source,go]
+----
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, AsciiDoc!")
+}
+----

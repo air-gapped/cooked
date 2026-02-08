@@ -22,16 +22,18 @@ import (
 
 // Server is the main cooked HTTP server.
 type Server struct {
-	cfg        *config.Config
-	version    string
-	fetcher    *fetch.CachedClient
-	mdRender   *render.MarkdownRenderer
-	codeRender *render.CodeRenderer
-	tmpl       *cookedtemplate.Renderer
-	assets     fs.FS
-	allowlist  *Allowlist
-	mux        *http.ServeMux
-	readmePage []byte // pre-rendered docs page (nil if README not embedded)
+	cfg            *config.Config
+	version        string
+	fetcher        *fetch.CachedClient
+	mdRender       *render.MarkdownRenderer
+	codeRender     *render.CodeRenderer
+	asciidocRender *render.AsciiDocRenderer
+	orgRender      *render.OrgRenderer
+	tmpl           *cookedtemplate.Renderer
+	assets         fs.FS
+	allowlist      *Allowlist
+	mux            *http.ServeMux
+	readmePage     []byte // pre-rendered docs page (nil if README not embedded)
 }
 
 // New creates a new cooked server with all dependencies.
@@ -65,15 +67,17 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 	cachedClient := fetch.NewCachedClient(client, memCache)
 
 	s := &Server{
-		cfg:        cfg,
-		version:    version,
-		fetcher:    cachedClient,
-		mdRender:   render.NewMarkdownRenderer(),
-		codeRender: render.NewCodeRenderer(),
-		tmpl:       cookedtemplate.NewRenderer(),
-		assets:     assets,
-		allowlist:  allowlist,
-		mux:        http.NewServeMux(),
+		cfg:            cfg,
+		version:        version,
+		fetcher:        cachedClient,
+		mdRender:       render.NewMarkdownRenderer(),
+		codeRender:     render.NewCodeRenderer(),
+		asciidocRender: render.NewAsciiDocRenderer(),
+		orgRender:      render.NewOrgRenderer(),
+		tmpl:           cookedtemplate.NewRenderer(),
+		assets:         assets,
+		allowlist:      allowlist,
+		mux:            http.NewServeMux(),
 	}
 
 	s.preRenderDocs()
@@ -268,6 +272,22 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+	case render.TypeAsciiDoc:
+		htmlContent, meta, err = s.asciidocRender.Render(result.Body)
+		if err != nil {
+			slog.Error("render asciidoc failed", "error", err, "upstream", rawUpstream)
+			s.renderError(w, rawUpstream, 500, "render-error", "Failed to render AsciiDoc")
+			return
+		}
+
+	case render.TypeOrg:
+		htmlContent, meta, err = s.orgRender.Render(result.Body)
+		if err != nil {
+			slog.Error("render org failed", "error", err, "upstream", rawUpstream)
+			s.renderError(w, rawUpstream, 500, "render-error", "Failed to render Org")
+			return
+		}
+
 	case render.TypeCode:
 		htmlContent, err = s.codeRender.Render(result.Body, fileInfo.Language)
 		if err != nil {
@@ -287,13 +307,15 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 
 	renderMs := time.Since(renderStart).Milliseconds()
 
-	// Sanitize HTML (only for markdown/mdx which may contain upstream HTML)
-	if fileInfo.ContentType == render.TypeMarkdown || fileInfo.ContentType == render.TypeMDX {
+	// Sanitize HTML (for formats that may contain upstream HTML)
+	switch fileInfo.ContentType {
+	case render.TypeMarkdown, render.TypeMDX, render.TypeAsciiDoc, render.TypeOrg:
 		htmlContent = sanitize.HTML(htmlContent)
 	}
 
 	// Rewrite relative URLs
-	if fileInfo.ContentType == render.TypeMarkdown || fileInfo.ContentType == render.TypeMDX {
+	switch fileInfo.ContentType {
+	case render.TypeMarkdown, render.TypeMDX, render.TypeAsciiDoc, render.TypeOrg:
 		htmlContent = rewrite.RelativeURLs(htmlContent, rawUpstream, s.cfg.BaseURL)
 	}
 

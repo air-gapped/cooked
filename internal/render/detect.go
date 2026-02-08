@@ -11,6 +11,8 @@ type ContentType string
 const (
 	TypeMarkdown    ContentType = "markdown"
 	TypeMDX         ContentType = "mdx"
+	TypeAsciiDoc    ContentType = "asciidoc"
+	TypeOrg         ContentType = "org"
 	TypeCode        ContentType = "code"
 	TypePlaintext   ContentType = "plaintext"
 	TypeUnsupported ContentType = "unsupported"
@@ -29,6 +31,13 @@ var markdownExts = map[string]bool{
 	".markdown": true,
 	".mdown":    true,
 	".mkd":      true,
+}
+
+// asciidocExts maps AsciiDoc file extensions.
+var asciidocExts = map[string]bool{
+	".adoc":     true,
+	".asciidoc": true,
+	".asc":      true,
 }
 
 // codeExts maps file extensions to (language, label).
@@ -110,6 +119,16 @@ func DetectFile(urlPath string) FileInfo {
 		return FileInfo{ContentType: TypeMarkdown, Label: "Markdown"}
 	}
 
+	// Check AsciiDoc extensions
+	if asciidocExts[ext] {
+		return FileInfo{ContentType: TypeAsciiDoc, Label: "AsciiDoc"}
+	}
+
+	// Check Org-mode extension
+	if ext == ".org" {
+		return FileInfo{ContentType: TypeOrg, Label: "Org"}
+	}
+
 	// Check code extensions
 	if info, ok := codeExts[ext]; ok {
 		return FileInfo{ContentType: TypeCode, Language: info[0], Label: info[1]}
@@ -123,9 +142,9 @@ func DetectFile(urlPath string) FileInfo {
 	return FileInfo{ContentType: TypeUnsupported, Label: "Unknown"}
 }
 
-// IsMarkdownLink returns true if the URL path points to a markdown-like file
-// (used for relative URL rewriting decisions).
-func IsMarkdownLink(urlPath string) bool {
+// IsRenderableLink returns true if the URL path points to a file that cooked
+// can render (used for relative URL rewriting decisions).
+func IsRenderableLink(urlPath string) bool {
 	ext := strings.ToLower(path.Ext(urlPath))
-	return markdownExts[ext] || ext == ".mdx"
+	return markdownExts[ext] || ext == ".mdx" || asciidocExts[ext] || ext == ".org"
 }

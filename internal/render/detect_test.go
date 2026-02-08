@@ -143,6 +143,53 @@ func TestDetectFile_Plaintext(t *testing.T) {
 	}
 }
 
+func TestDetectFile_AsciiDoc(t *testing.T) {
+	tests := []struct {
+		path string
+		want ContentType
+	}{
+		{"/README.adoc", TypeAsciiDoc},
+		{"/guide.asciidoc", TypeAsciiDoc},
+		{"/notes.asc", TypeAsciiDoc},
+		{"/FILE.ADOC", TypeAsciiDoc},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			info := DetectFile(tc.path)
+			if info.ContentType != tc.want {
+				t.Errorf("DetectFile(%q).ContentType = %q, want %q", tc.path, info.ContentType, tc.want)
+			}
+			if info.Label != "AsciiDoc" {
+				t.Errorf("DetectFile(%q).Label = %q, want AsciiDoc", tc.path, info.Label)
+			}
+		})
+	}
+}
+
+func TestDetectFile_Org(t *testing.T) {
+	tests := []struct {
+		path string
+		want ContentType
+	}{
+		{"/README.org", TypeOrg},
+		{"/notes.org", TypeOrg},
+		{"/FILE.ORG", TypeOrg},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.path, func(t *testing.T) {
+			info := DetectFile(tc.path)
+			if info.ContentType != tc.want {
+				t.Errorf("DetectFile(%q).ContentType = %q, want %q", tc.path, info.ContentType, tc.want)
+			}
+			if info.Label != "Org" {
+				t.Errorf("DetectFile(%q).Label = %q, want Org", tc.path, info.Label)
+			}
+		})
+	}
+}
+
 func TestDetectFile_Unsupported(t *testing.T) {
 	tests := []string{
 		"/image.png",
@@ -174,7 +221,7 @@ func TestDetectFile_CaseInsensitive(t *testing.T) {
 	}
 }
 
-func TestIsMarkdownLink(t *testing.T) {
+func TestIsRenderableLink(t *testing.T) {
 	tests := []struct {
 		path string
 		want bool
@@ -182,6 +229,10 @@ func TestIsMarkdownLink(t *testing.T) {
 		{"CONTRIBUTING.md", true},
 		{"guide.markdown", true},
 		{"docs.mdx", true},
+		{"README.adoc", true},
+		{"guide.asciidoc", true},
+		{"notes.asc", true},
+		{"readme.org", true},
 		{"image.png", false},
 		{"script.py", false},
 		{"readme.txt", false},
@@ -189,8 +240,8 @@ func TestIsMarkdownLink(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
-			if got := IsMarkdownLink(tc.path); got != tc.want {
-				t.Errorf("IsMarkdownLink(%q) = %v, want %v", tc.path, got, tc.want)
+			if got := IsRenderableLink(tc.path); got != tc.want {
+				t.Errorf("IsRenderableLink(%q) = %v, want %v", tc.path, got, tc.want)
 			}
 		})
 	}

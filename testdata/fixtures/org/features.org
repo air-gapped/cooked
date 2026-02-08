@@ -1,0 +1,30 @@
+#+TITLE: Org Features
+
+* Tables
+
+| Name   | Language    | Year |
+|--------+-------------+------|
+| Go     | Compiled    | 2009 |
+| Python | Interpreted | 1991 |
+| Rust   | Compiled    | 2010 |
+
+* TODO Items
+
+** TODO Write documentation
+** DONE Set up project
+** TODO Add tests
+
+* Links and Formatting
+
+This paragraph has *bold*, /italic/, ~code~, +strikethrough+, and _underline_ text.
+
+Visit [[https://orgmode.org][Org Mode]] for more information.
+
+* Code Block
+
+#+BEGIN_SRC python
+def greet(name):
+    return f"Hello, {name}!"
+
+print(greet("Org"))
+#+END_SRC

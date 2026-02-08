@@ -227,6 +227,63 @@ func TestIntegration_MDX(t *testing.T) {
 	}
 }
 
+// --- Full pipeline: AsciiDoc rendering ---
+
+func TestIntegration_AsciiDocBasic(t *testing.T) {
+	upstream := serveFixture(t, filepath.Join(fixtureDir(), "asciidoc", "basic.adoc"))
+	defer upstream.Close()
+
+	srv, cleanup := newIntegrationServer(t)
+	defer cleanup()
+
+	status, headers, body := getBody(t, srv.URL+"/"+upstream.URL+"/basic.adoc")
+
+	if status != 200 {
+		t.Fatalf("status = %d, want 200", status)
+	}
+
+	if got := headers.Get("X-Cooked-Content-Type"); got != "asciidoc" {
+		t.Errorf("X-Cooked-Content-Type = %q, want asciidoc", got)
+	}
+
+	// Rendered content checks (AsciiDoc document title goes to metadata, not body;
+	// == headings render as <h2>)
+	if !strings.Contains(body, "<h2") {
+		t.Error("missing <h2> for '== Section One'")
+	}
+	if !strings.Contains(body, `id="cooked-content"`) {
+		t.Error("missing #cooked-content")
+	}
+}
+
+// --- Full pipeline: Org-mode rendering ---
+
+func TestIntegration_OrgBasic(t *testing.T) {
+	upstream := serveFixture(t, filepath.Join(fixtureDir(), "org", "basic.org"))
+	defer upstream.Close()
+
+	srv, cleanup := newIntegrationServer(t)
+	defer cleanup()
+
+	status, headers, body := getBody(t, srv.URL+"/"+upstream.URL+"/basic.org")
+
+	if status != 200 {
+		t.Fatalf("status = %d, want 200", status)
+	}
+
+	if got := headers.Get("X-Cooked-Content-Type"); got != "org" {
+		t.Errorf("X-Cooked-Content-Type = %q, want org", got)
+	}
+
+	// Rendered content checks
+	if !strings.Contains(body, "<h1") {
+		t.Error("missing <h1> for '* Section One'")
+	}
+	if !strings.Contains(body, `id="cooked-content"`) {
+		t.Error("missing #cooked-content")
+	}
+}
+
 // --- Full pipeline: plaintext rendering ---
 
 func TestIntegration_Plaintext(t *testing.T) {
@@ -580,6 +637,10 @@ func TestIntegration_MultipleFileTypes(t *testing.T) {
 			w.Write([]byte("print('hello')\n"))
 		case "/notes.txt":
 			w.Write([]byte("plain text notes\n"))
+		case "/guide.adoc":
+			w.Write([]byte("== Guide\n\nAsciiDoc content.\n"))
+		case "/readme.org":
+			w.Write([]byte("* Org\n\nOrg content.\n"))
 		default:
 			http.NotFound(w, r)
 		}
@@ -597,6 +658,8 @@ func TestIntegration_MultipleFileTypes(t *testing.T) {
 		{"/readme.md", "markdown", "<h1"},
 		{"/main.py", "code", "<span"},
 		{"/notes.txt", "plaintext", "<pre"},
+		{"/guide.adoc", "asciidoc", "<h2"},
+		{"/readme.org", "org", "<h1"},
 	}
 
 	for _, tc := range tests {
