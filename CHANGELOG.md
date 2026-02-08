@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/air-gapped/cooked/compare/v1.1.0...v1.1.1) (2026-02-08)
+
+
+### Bug Fixes
+
+* silence logrus output from libasciidoc ([f03fe85](https://github.com/air-gapped/cooked/commit/f03fe85586fdac0742c0ce0a09658c7d6e758233))
+
 ## [1.1.0](https://github.com/air-gapped/cooked/compare/v1.0.7...v1.1.0) (2026-02-08)
 
 
