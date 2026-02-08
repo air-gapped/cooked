@@ -16,6 +16,8 @@ cooked fetches the upstream URL, detects the file type, renders it to styled HTM
 
 - **Markdown** — `.md`, `.markdown`, `.mdown`, `.mkd`
 - **MDX** — `.mdx` (JSX imports/exports and component tags are stripped before rendering)
+- **AsciiDoc** — `.adoc`, `.asciidoc`, `.asc` (rendered via [libasciidoc](https://github.com/bytesparadise/libasciidoc); `include::` directives are skipped for remote documents)
+- **Org-mode** — `.org` (rendered via [go-org](https://github.com/niklasfasching/go-org); title extracted from `#+TITLE` or first headline)
 - **Code** — `.py`, `.go`, `.js`, `.ts`, `.rs`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`, `.rb`, `.lua`, `.pl`, `.sh`, `.bash`, `.zsh`, `.fish`, `.yaml`, `.yml`, `.json`, `.toml`, `.xml`, `.csv`, `.sql`, `.graphql`, `.tf`, `.hcl`, `.dockerfile`, `.diff`, `.patch` (plus `Dockerfile`, `Makefile`, `Jenkinsfile` by filename)
 - **Plaintext** — `.txt`, `.text`, `.log`, `.conf`, `.cfg`, `.ini`, `.env`
 
@@ -82,7 +84,7 @@ Redirects are capped at 5 hops and validated against the allowlist when set.
 
 ### HTML sanitization
 
-Rendered markdown/MDX output is sanitized: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>` tags and all `on*` event handler attributes are stripped. Additionally, `javascript:`, `vbscript:`, and `data:text/html` URIs in `href`/`src` attributes are removed.
+Rendered markup output (Markdown, MDX, AsciiDoc, Org-mode) is sanitized: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>` tags and all `on*` event handler attributes are stripped. Additionally, `javascript:`, `vbscript:`, and `data:text/html` URIs in `href`/`src` attributes are removed.
 
 ### TLS verification
 
@@ -138,7 +140,7 @@ cooked sets response headers for monitoring and debugging:
 | `X-Cooked-Upstream` | Upstream URL that was fetched |
 | `X-Cooked-Upstream-Status` | HTTP status code from upstream |
 | `X-Cooked-Cache` | Cache status (hit/miss/revalidated/stale) |
-| `X-Cooked-Content-Type` | Detected file type (markdown/code/plaintext) |
+| `X-Cooked-Content-Type` | Detected file type (markdown/mdx/asciidoc/org/code/plaintext) |
 | `X-Cooked-Render-Ms` | Time spent rendering HTML (milliseconds) |
 | `X-Cooked-Upstream-Ms` | Time spent fetching from upstream (milliseconds) |
 

@@ -2,24 +2,58 @@ package render
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"regexp"
 
 	"github.com/bytesparadise/libasciidoc"
 	"github.com/bytesparadise/libasciidoc/pkg/configuration"
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // includeRe matches AsciiDoc include:: directives that would try to read local files.
 var includeRe = regexp.MustCompile(`(?m)^(include::)(.+\[.*\])\s*$`)
 
+// slogHook is a logrus hook that forwards log entries to slog.
+type slogHook struct{}
+
+func (h *slogHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *slogHook) Fire(entry *logrus.Entry) error {
+	attrs := make([]slog.Attr, 0, len(entry.Data)+1)
+	attrs = append(attrs, slog.String("source", "libasciidoc"))
+	for k, v := range entry.Data {
+		attrs = append(attrs, slog.Any(k, v))
+	}
+
+	var level slog.Level
+	switch entry.Level {
+	case logrus.TraceLevel, logrus.DebugLevel:
+		level = slog.LevelDebug
+	case logrus.InfoLevel:
+		level = slog.LevelInfo
+	case logrus.WarnLevel:
+		level = slog.LevelWarn
+	default:
+		level = slog.LevelError
+	}
+
+	slog.LogAttrs(context.Background(), level, entry.Message, attrs...)
+	return nil
+}
+
 // AsciiDocRenderer renders AsciiDoc content to HTML.
 type AsciiDocRenderer struct{}
 
 // NewAsciiDocRenderer creates a new AsciiDoc renderer.
-// Silences logrus output from libasciidoc to keep our JSON logging clean.
 func NewAsciiDocRenderer() *AsciiDocRenderer {
-	logrus.SetLevel(logrus.FatalLevel)
+	// Redirect logrus (used by libasciidoc) into our structured slog output.
+	logrus.SetOutput(io.Discard) // suppress default text output
+	logrus.AddHook(&slogHook{})  // forward to slog instead
 	return &AsciiDocRenderer{}
 }
 
