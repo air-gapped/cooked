@@ -20,7 +20,7 @@ var includeRe = regexp.MustCompile(`(?m)^(include::)(.+\[.*\])\s*$`)
 type slogHook struct{}
 
 func (h *slogHook) Levels() []logrus.Level {
-	return logrus.AllLevels
+	return []logrus.Level{logrus.WarnLevel, logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel}
 }
 
 func (h *slogHook) Fire(entry *logrus.Entry) error {
@@ -32,10 +32,6 @@ func (h *slogHook) Fire(entry *logrus.Entry) error {
 
 	var level slog.Level
 	switch entry.Level {
-	case logrus.TraceLevel, logrus.DebugLevel:
-		level = slog.LevelDebug
-	case logrus.InfoLevel:
-		level = slog.LevelInfo
 	case logrus.WarnLevel:
 		level = slog.LevelWarn
 	default:
