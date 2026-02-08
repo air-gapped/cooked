@@ -74,11 +74,26 @@ When in doubt about ANY operation that could lose work, ask first.
 
 ## Working Guidelines
 
-**Never assume versions or dates:**
+**MANDATORY: Check latest versions before adding ANY dependency:**
+
+You MUST verify the latest version of every dependency before running `go get`. Training data is stale — treat all version knowledge as wrong until verified. This is not optional.
+
+Before adding a dependency:
+1. `gh api repos/OWNER/REPO/releases/latest --jq '.tag_name'` — check latest release
+2. If no releases: `gh api repos/OWNER/REPO/tags --jq '.[0].name'` — check latest tag
+3. Compare with what `go get` would pull — if it's older, pin to latest explicitly
+4. Check the repo's README or CHANGELOG for breaking changes
+
+```bash
+# Example: before go get github.com/foo/bar
+gh api repos/foo/bar/releases/latest --jq '.tag_name'
+# Then: go get github.com/foo/bar@v1.2.3
+```
+
+Never run a bare `go get github.com/foo/bar` without checking the latest version first. Never trust version numbers from memory or training data.
+
+**Never assume dates:**
 - Run `date` to confirm the current year before searching for "latest" anything
-- Use `gh release view --repo owner/repo --json tagName` to get actual latest versions
-- Use `gh api repos/owner/repo/releases/latest --jq '.tag_name'` as alternative
-- Do not guess version numbers from training data — they are likely outdated
 
 **Verify before writing:**
 - Test commands (curl, gh, etc.) before putting them in specs or Makefiles
