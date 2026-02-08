@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/air-gapped/cooked/compare/v1.0.7...v1.1.0) (2026-02-08)
+
+
+### Features
+
+* add AsciiDoc and Org-mode rendering support ([3d63832](https://github.com/air-gapped/cooked/commit/3d63832e2fe8b7cd5c698e2eca79c99ac9d9ddac))
+
 ## [1.0.7](https://github.com/air-gapped/cooked/compare/v1.0.6...v1.0.7) (2026-02-07)
 
 
