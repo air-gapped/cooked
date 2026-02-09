@@ -34,8 +34,17 @@ func (h *slogHook) Fire(entry *logrus.Entry) error {
 	switch entry.Level {
 	case logrus.WarnLevel:
 		level = slog.LevelWarn
-	default:
+	case logrus.ErrorLevel:
 		level = slog.LevelError
+	case logrus.FatalLevel:
+		// Use a custom level higher than Error to reflect fatal severity.
+		level = slog.Level(slog.LevelError + 1)
+	case logrus.PanicLevel:
+		// Use a custom level higher than Fatal to reflect panic severity.
+		level = slog.Level(slog.LevelError + 2)
+	default:
+		// Fallback for any other levels (e.g., info/debug) if they ever appear.
+		level = slog.LevelInfo
 	}
 
 	slog.LogAttrs(context.Background(), level, entry.Message, attrs...)
