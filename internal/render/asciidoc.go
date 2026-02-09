@@ -47,9 +47,8 @@ type AsciiDocRenderer struct{}
 
 // NewAsciiDocRenderer creates a new AsciiDoc renderer.
 func NewAsciiDocRenderer() *AsciiDocRenderer {
-	// Redirect logrus (used by libasciidoc) into our structured slog output.
-	logrus.SetOutput(io.Discard) // suppress default text output
-	logrus.AddHook(&slogHook{})  // forward to slog instead
+	// Logging for libasciidoc is configured per-render in Render to avoid
+	// mutating the global logrus logger used elsewhere in the application.
 	return &AsciiDocRenderer{}
 }
 
@@ -59,6 +58,16 @@ func (r *AsciiDocRenderer) Render(source []byte) ([]byte, *MarkdownMeta, error) 
 	safe := includeRe.ReplaceAll(source, []byte("// include (not available): $2"))
 
 	cfg := configuration.NewConfiguration()
+
+	// Configure a logger specifically for libasciidoc so that we don't
+	// affect the global logrus configuration used by other components.
+	logger := logrus.New()
+	logger.SetOutput(io.Discard) // suppress default text output
+	logger.AddHook(&slogHook{})  // forward to slog instead
+
+	// If the configuration type supports injecting a logger, assign it here
+	// so that libasciidoc uses our locally configured logger instance.
+	cfg.Logger = logger
 
 	var buf bytes.Buffer
 	metadata, err := libasciidoc.Convert(bytes.NewReader(safe), &buf, cfg)
