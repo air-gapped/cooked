@@ -1,6 +1,9 @@
 package server
 
 import (
+	"context"
+	"fmt"
+	"net"
 	"testing"
 )
 
@@ -76,11 +79,49 @@ func TestAllowlist_CIDR(t *testing.T) {
 		// With port
 		{"10.0.0.1:8080", true},
 
-		// Hostname (not IP) should not match CIDR
+		// Hostname — real DNS resolution may or may not match CIDR;
+		// for deterministic testing of hostname resolution, see TestAllowlist_CIDRResolvesHostname
 		{"example.com", false},
 	}
 
 	a := ParseAllowlist("10.0.0.0/8, 172.16.0.0/12")
+	for _, tc := range tests {
+		t.Run(tc.host, func(t *testing.T) {
+			if got := a.Allows(tc.host); got != tc.wantOK {
+				t.Errorf("Allows(%q) = %v, want %v", tc.host, got, tc.wantOK)
+			}
+		})
+	}
+}
+
+func TestAllowlist_CIDRResolvesHostname(t *testing.T) {
+	a := ParseAllowlist("10.0.0.0/8")
+	// Inject a fake resolver that returns 10.0.0.42 for "intranet.local"
+	a.resolver = func(_ context.Context, host string) ([]net.IPAddr, error) {
+		if host == "intranet.local" {
+			return []net.IPAddr{{IP: net.ParseIP("10.0.0.42")}}, nil
+		}
+		return nil, fmt.Errorf("no such host")
+	}
+
+	tests := []struct {
+		host   string
+		wantOK bool
+	}{
+		// Hostname resolving to 10.x should match CIDR
+		{"intranet.local", true},
+		{"intranet.local:8080", true},
+
+		// IP literal still works
+		{"10.0.0.1", true},
+
+		// Unknown host — resolver returns error → deny
+		{"unknown.host", false},
+
+		// IP outside CIDR
+		{"11.0.0.1", false},
+	}
+
 	for _, tc := range tests {
 		t.Run(tc.host, func(t *testing.T) {
 			if got := a.Allows(tc.host); got != tc.wantOK {

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/air-gapped/cooked/internal/cache"
@@ -88,7 +89,9 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /_cooked/docs", s.handleDocs)
+	s.mux.HandleFunc("GET /_cooked/raw/{upstream...}", s.handleRaw)
 	s.mux.HandleFunc("GET /_cooked/{path...}", s.handleAsset)
+	s.mux.HandleFunc("GET /.well-known/{path...}", s.handleWellKnown)
 	s.mux.HandleFunc("GET /{$}", s.handleLanding)
 	s.mux.HandleFunc("GET /{upstream...}", s.handleRender)
 }
@@ -177,6 +180,50 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Write(data)
+}
+
+func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
+	rawUpstream := ExtractUpstreamFromPath(
+		strings.TrimPrefix(r.URL.Path, "/_cooked/raw"),
+		r.URL.RawQuery,
+	)
+
+	upstream, err := ParseUpstreamURL(rawUpstream)
+	if err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	if !s.allowlist.Allows(upstream.Host) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	if s.allowlist == nil {
+		private, err := IsPrivateAddress(upstream.Host)
+		if err != nil || private {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+	}
+
+	result, err := s.fetcher.Client().Fetch(rawUpstream, "", "")
+	if err != nil {
+		http.Error(w, "upstream fetch failed", http.StatusBadGateway)
+		return
+	}
+
+	if result.StatusCode != 200 {
+		http.Error(w, fmt.Sprintf("upstream returned %d", result.StatusCode), result.StatusCode)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write(result.Body)
+}
+
+func (s *Server) handleWellKnown(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {

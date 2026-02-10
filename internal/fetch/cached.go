@@ -81,6 +81,11 @@ func (cc *CachedClient) Store(key string, entry cache.Entry) {
 	cc.cache.Put(key, entry)
 }
 
+// Client returns the underlying fetch client for direct (uncached) access.
+func (cc *CachedClient) Client() *Client {
+	return cc.client
+}
+
 // Cache returns the underlying cache for direct access.
 func (cc *CachedClient) Cache() *cache.Cache {
 	return cc.cache

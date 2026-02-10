@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net"
 	"strings"
 )
@@ -14,6 +15,7 @@ type Allowlist struct {
 	cidrs     []*net.IPNet
 	wildcards []string // stored as ".suffix" (e.g. ".internal" from "*.internal")
 	exact     []string // lowercased hostnames
+	resolver  func(ctx context.Context, host string) ([]net.IPAddr, error)
 }
 
 // ParseAllowlist parses a comma-separated allowlist string into a structured
@@ -28,7 +30,9 @@ func ParseAllowlist(raw string) *Allowlist {
 		return nil
 	}
 
-	a := &Allowlist{}
+	a := &Allowlist{
+		resolver: net.DefaultResolver.LookupIPAddr,
+	}
 	for _, entry := range strings.Split(raw, ",") {
 		entry = strings.TrimSpace(entry)
 		if entry == "" {
@@ -79,11 +83,27 @@ func (a *Allowlist) Allows(host string) bool {
 		}
 	}
 
-	// Check CIDRs (only for IP-literal hosts)
-	if ip := net.ParseIP(hostname); ip != nil {
-		for _, cidr := range a.cidrs {
-			if cidr.Contains(ip) {
-				return true
+	// Check CIDRs
+	if len(a.cidrs) > 0 {
+		if ip := net.ParseIP(hostname); ip != nil {
+			// IP-literal host: check directly
+			for _, cidr := range a.cidrs {
+				if cidr.Contains(ip) {
+					return true
+				}
+			}
+		} else if a.resolver != nil {
+			// Hostname: resolve and check each IP
+			addrs, err := a.resolver(context.Background(), hostname)
+			if err != nil {
+				return false // deny on DNS failure
+			}
+			for _, addr := range addrs {
+				for _, cidr := range a.cidrs {
+					if cidr.Contains(addr.IP) {
+						return true
+					}
+				}
 			}
 		}
 	}

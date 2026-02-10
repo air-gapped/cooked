@@ -131,7 +131,7 @@ func writeScripts(buf *bytes.Buffer) {
       btn.addEventListener('click', function() {
         btn.disabled = true;
         btn.textContent = 'Fetching\u2026';
-        fetch(upstreamURL).then(function(r) {
+        fetch('/_cooked/raw/' + upstreamURL).then(function(r) {
           if (!r.ok) throw new Error(r.status);
           return r.text();
         }).then(function(text) {
