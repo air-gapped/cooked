@@ -599,6 +599,100 @@ func TestErrorMessages_NoInternalDetails(t *testing.T) {
 	}
 }
 
+func TestRawEndpoint(t *testing.T) {
+	const rawContent = "# Hello World\n\nRaw markdown content.\n"
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(rawContent))
+	}))
+	defer upstream.Close()
+
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/_cooked/raw/" + upstream.URL + "/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		t.Fatalf("status = %d, want 200; body: %s", resp.StatusCode, body)
+	}
+
+	ct := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/plain") {
+		t.Errorf("Content-Type = %q, want text/plain", ct)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != rawContent {
+		t.Errorf("body = %q, want %q", string(body), rawContent)
+	}
+}
+
+func TestRawEndpoint_BlockedUpstream(t *testing.T) {
+	s := newTestServer(t, &config.Config{
+		Listen:           ":8080",
+		CacheTTL:         5 * time.Minute,
+		CacheMaxSize:     100 * 1024 * 1024,
+		FetchTimeout:     10 * time.Second,
+		MaxFileSize:      5 * 1024 * 1024,
+		DefaultTheme:     "auto",
+		AllowedUpstreams: "allowed.internal",
+	})
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/_cooked/raw/https://evil.com/README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != 403 {
+		t.Errorf("status = %d, want 403", resp.StatusCode)
+	}
+}
+
+func TestRawEndpoint_InvalidURL(t *testing.T) {
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/_cooked/raw/ftp://bad/url")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != 400 {
+		t.Errorf("status = %d, want 400", resp.StatusCode)
+	}
+}
+
+func TestWellKnown_Returns404Silently(t *testing.T) {
+	s := newTestServer(t, nil)
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/.well-known/traffic-advice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 404 {
+		t.Errorf("status = %d, want 404", resp.StatusCode)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if len(body) != 0 {
+		t.Errorf("body = %q, want empty", string(body))
+	}
+}
+
 func TestUpstreamURLRedaction(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("# Test\n"))
