@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/air-gapped/cooked/compare/v1.2.0...v1.2.1) (2026-02-10)
+
+
+### Bug Fixes
+
+* resolve hostnames against CIDR allowlist, proxy raw content for copy button, silence .well-known noise ([e22c596](https://github.com/air-gapped/cooked/commit/e22c5962b5e0b359fe534b7b477a8498373c66b9))
+
 ## [1.2.0](https://github.com/air-gapped/cooked/compare/v1.1.0...v1.2.0) (2026-02-08)
 
 
