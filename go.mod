@@ -7,7 +7,7 @@ require (
 	github.com/bytesparadise/libasciidoc v0.8.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/niklasfasching/go-org v1.9.1
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/yuin/goldmark v1.7.17
 	go.abhg.dev/goldmark/mermaid v0.6.0
 	go.uber.org/goleak v1.3.0
