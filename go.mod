@@ -7,7 +7,8 @@ require (
 	github.com/bytesparadise/libasciidoc v0.8.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/niklasfasching/go-org v1.9.1
-	github.com/yuin/goldmark v1.7.16
+	github.com/sirupsen/logrus v1.9.3
+	github.com/yuin/goldmark v1.7.17
 	go.abhg.dev/goldmark/mermaid v0.6.0
 	go.uber.org/goleak v1.3.0
 )
@@ -23,7 +24,6 @@ require (
 	github.com/mna/pigeon v1.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.1.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
