@@ -1,12 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "minimumReleaseAge": "3 days",
+  "allowScripts": false,
+  "allowPlugins": false,
+  "exposeAllEnv": false,
   "gomod": {
     "postUpdateOptions": ["gomodTidy"]
   },
   "packageRules": [
     {
-      "description": "Automerge minor/patch for stable Go deps",
+      "description": "Automerge minor/patch for stable Go deps after cooldown",
       "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch"],
       "matchCurrentVersion": "!/^0/",
@@ -14,14 +18,12 @@
       "semanticCommitType": "fix"
     },
     {
-      "description": "Automerge minor/patch for GitHub Actions",
+      "description": "Never automerge GitHub Actions — require human review",
       "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "semanticCommitType": "fix"
+      "automerge": false
     },
     {
-      "description": "Automerge patch-level Docker updates",
+      "description": "Automerge patch-level Docker updates after cooldown",
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["patch"],
       "automerge": true,
