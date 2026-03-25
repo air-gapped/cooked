@@ -1,24 +1,37 @@
 #!/usr/bin/env sh
-# bd-shim v1
-# bd-hooks-version: 0.49.4
+# br (beads_rust) pre-commit hook
 #
-# bd (beads) pre-commit hook - thin shim
-#
-# This shim delegates to 'bd hook pre-commit' which contains
-# the actual hook logic. This pattern ensures hook behavior is always
-# in sync with the installed bd version - no manual updates needed.
-#
-# The 'bd hook' command (singular) supports:
-# - Per-worktree export state tracking
-# - Dolt branch-then-merge pattern for cell-level conflict resolution
-# - Hook chaining configuration
+# br is non-invasive — it never runs git commands itself.
+# This hook flushes SQLite → JSONL and stages the result.
 
-# Check if bd is available
-if ! command -v bd >/dev/null 2>&1; then
-    echo "Warning: bd command not found in PATH, skipping pre-commit hook" >&2
-    echo "  Install bd: brew install beads" >&2
-    echo "  Or add bd to your PATH" >&2
-    exit 0
+set -e
+
+# --- Beads flush ---
+
+if command -v br >/dev/null 2>&1; then
+    BEADS_DIR=""
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        if [ "$(git rev-parse --git-dir)" != "$(git rev-parse --git-common-dir)" ]; then
+            MAIN_REPO_ROOT="$(dirname "$(git rev-parse --git-common-dir)")"
+            if [ -d "$MAIN_REPO_ROOT/.beads" ]; then
+                BEADS_DIR="$MAIN_REPO_ROOT/.beads"
+            fi
+        elif [ -d .beads ]; then
+            BEADS_DIR=".beads"
+        fi
+    fi
+
+    if [ -n "$BEADS_DIR" ]; then
+        if ! br sync --flush-only >/dev/null 2>&1; then
+            echo "Error: Failed to flush br changes to JSONL" >&2
+            echo "Run 'br sync --flush-only' manually to diagnose" >&2
+            exit 1
+        fi
+        # Stage JSONL if in regular repo (not worktree)
+        if [ -f "$BEADS_DIR/issues.jsonl" ]; then
+            if [ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ]; then
+                git add "$BEADS_DIR/issues.jsonl" 2>/dev/null || true
+            fi
+        fi
+    fi
 fi
-
-exec bd hook pre-commit "$@"
