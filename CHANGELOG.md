@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.2.2](https://github.com/air-gapped/cooked/compare/v1.2.1...v1.2.2) (2026-03-26)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/sirupsen/logrus to v1.9.4 ([#39](https://github.com/air-gapped/cooked/issues/39)) ([2039de7](https://github.com/air-gapped/cooked/commit/2039de728738edb37ce437dc5940300ca72af945))
+* **deps:** update module github.com/yuin/goldmark to v1.7.17 ([#37](https://github.com/air-gapped/cooked/issues/37)) ([3483394](https://github.com/air-gapped/cooked/commit/34833946981f477037a39bb893b1744ffa6e74d0))
+* **deps:** update module github.com/yuin/goldmark to v1.8.1 ([#40](https://github.com/air-gapped/cooked/issues/40)) ([8a81874](https://github.com/air-gapped/cooked/commit/8a8187421f0df35d99089f80a98092012df72a8a))
+
 ## [1.2.1](https://github.com/air-gapped/cooked/compare/v1.2.0...v1.2.1) (2026-02-10)
 
 
