@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/air-gapped/cooked/compare/v1.2.2...v1.2.3) (2026-03-26)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/yuin/goldmark to v1.8.2 ([#48](https://github.com/air-gapped/cooked/issues/48)) ([aeaeb27](https://github.com/air-gapped/cooked/commit/aeaeb27f20f654a5518d4ed1700aa7aaf5278023))
+
 ## [1.2.2](https://github.com/air-gapped/cooked/compare/v1.2.1...v1.2.2) (2026-03-26)
 
 
