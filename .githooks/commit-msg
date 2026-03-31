@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+# Validate conventional commit prefix matches the files being committed.
+#
+# Prevents release-triggering prefixes (feat:, fix:) on changes that
+# should use non-release prefixes (ci:, docs:, chore:, test:, refactor:).
+
+set -e
+
+MSG_FILE="$1"
+MSG=$(head -1 "$MSG_FILE")
+
+# Extract prefix (e.g. "feat" from "feat: add something" or "feat(scope): add something")
+PREFIX=$(echo "$MSG" | sed -n 's/^\([a-z]*\)[(:].*/\1/p')
+
+# Only check release-triggering prefixes
+case "$PREFIX" in
+    feat|fix) ;;
+    *) exit 0 ;;
+esac
+
+# Get staged files
+STAGED=$(git diff --cached --name-only)
+
+# Check if ALL staged files are non-code (CI, docs, config)
+ALL_NON_CODE=true
+for file in $STAGED; do
+    case "$file" in
+        .github/workflows/*) ;;
+        .github/CODEOWNERS) ;;
+        .githooks/*) ;;
+        CLAUDE.md|README.md|*.md) ;;
+        renovate.json|.renovaterc*) ;;
+        .gitignore|.editorconfig) ;;
+        .beads/*) ;;
+        Makefile) ;;
+        *)
+            ALL_NON_CODE=false
+            break
+            ;;
+    esac
+done
+
+if [ "$ALL_NON_CODE" = "true" ]; then
+    echo ""
+    echo "ERROR: Commit prefix '$PREFIX:' triggers a release, but all changed files"
+    echo "are CI/docs/config — not user-facing code."
+    echo ""
+    echo "Changed files:"
+    echo "$STAGED" | sed 's/^/  /'
+    echo ""
+    echo "Suggested prefixes: ci:, docs:, chore:, test:, refactor:"
+    echo ""
+    echo "If this really is a user-facing change, use --no-verify to bypass."
+    exit 1
+fi
