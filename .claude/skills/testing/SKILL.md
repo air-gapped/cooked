@@ -1,18 +1,9 @@
 ---
 name: testing
-description: MANDATORY - Load before writing tests. Enforces fakes over mocks, golden files, goleak, httptest.
+description: MANDATORY - Load before writing tests. Covers fakes over mocks, golden files, goleak, httptest, fuzzing, parallel tests, synctest, race detection, test coverage, table-driven tests. Enforces project test conventions.
 ---
 
 # Go Testing Standards
-
-## Philosophy
-
-1. **Fakes over mocks** — Test real implementation when possible; fakes when not
-2. **Stdlib first** — Use `testing` package; third-party only when it adds real value
-3. **Test behavior, not implementation** — Public API matters, internals don't
-4. **Fast and deterministic** — Flaky tests are worse than no tests
-
----
 
 ## Fakes Over Mocks
 
@@ -279,27 +270,17 @@ t.Run("test", func(t *testing.T) {
 })
 ```
 
-Always run with `-race`:
-```bash
-go test -race ./...
-```
-
 Sources: [Parallel Table-Driven Tests](https://www.glukhov.org/post/2025/12/parallel-table-driven-tests-in-go/)
 
 ---
 
-## Project Commands
+## Makefile Targets
+
+Use Makefile targets, not bare `go test`:
 
 ```bash
-# All tests
-go test ./...
-
-# With race detection
-go test -race ./...
-
-# Coverage (use /tmp, not project root)
-go test -coverprofile=/tmp/coverage.out ./...
-go tool cover -func=/tmp/coverage.out | grep total
+make test           # All tests
+make test-race      # With race detector
 ```
 
 ## Key Files
