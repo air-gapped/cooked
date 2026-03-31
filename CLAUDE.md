@@ -156,13 +156,6 @@ make lint        # Run golangci-lint + gitleaks
 make lint-go     # Run golangci-lint only
 ```
 
-### Pre-commit
-
-Always run before committing:
-```bash
-make lint
-```
-
 ### Conventional Commits
 
 This repo uses **release-please** with Conventional Commits. The commit prefix determines
