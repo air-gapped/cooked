@@ -84,17 +84,9 @@ cooked does not forward cookies, authorization headers, or other credentials to 
 
 ## Docker
 
-### Basic usage
-
 ```bash
 docker run -p 8080:8080 cooked
-```
-
-### Air-gapped with allowed upstreams
-
-```bash
-docker run -p 8080:8080 cooked \
-  --allowed-upstreams="*.internal,10.0.0.0/8,gitea.corp.example.com"
+docker run -p 8080:8080 cooked --allowed-upstreams="*.internal,10.0.0.0/8"
 ```
 
 ### Internal CA certificates
