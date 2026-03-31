@@ -1,8 +1,6 @@
 # cooked
 
-A rendering proxy that takes a URL to a raw document (markdown, etc.) and serves it as styled HTML. The opposite of "raw" — you give it a raw file URL, it gives you the cooked version.
-
-Designed for air-gapped environments. The binary is fully self-contained — all CSS, JavaScript, fonts, and templates are embedded. No CDN requests, no external resources.
+A rendering proxy for air-gapped environments. Give it a raw document URL and it serves styled HTML. The binary is fully self-contained — all CSS, JavaScript, and templates are embedded. No CDN requests, no external resources.
 
 ## How it works
 
