@@ -1,0 +1,66 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/**'
+      - 'Dockerfile'
+
+permissions: {}
+
+jobs:
+  # Layer 1: Known CVE + license check (free, fast)
+  vulnerability-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: high
+
+  # Layer 2: AI security review of upstream changes
+  ai-dependency-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 2
+
+      - name: Claude dependency security review
+        uses: anthropics/claude-code-action@88c168b39e7e64da0286d812b6e9fbebb6708185 # v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: 'renovate[bot],air-gapped-cooked-renovate[bot],dependabot[bot]'
+          direct_prompt: |
+            You are a supply chain security reviewer. Analyze this dependency update PR for security risks.
+
+            For EACH changed dependency, report:
+
+            1. **What changed**: versions, SHAs, new/removed dependencies
+            2. **Upstream verification**: Use `gh api` to check the commits between old and new versions:
+               - Who authored the commits? Are they known maintainers?
+               - Are commits signed/verified?
+               - What files changed upstream? (flag changes to dist/, action.yml, install scripts, CI config)
+               - How many commits? (a "patch" with 50+ commits is suspicious)
+            3. **Red flags check**: Look for these specific indicators from real 2026 attacks:
+               - New dependencies that are never imported (phantom deps — Axios attack pattern)
+               - Base64/encoded strings, eval(), exec() (tj-actions, LiteLLM pattern)
+               - New postinstall/preinstall scripts (Axios RAT dropper pattern)
+               - New .pth files in Python packages (LiteLLM pattern)
+               - New network calls to unexpected hosts (Telnyx C2 pattern)
+               - Self-deleting code (Axios anti-forensics pattern)
+               - Registry publish with no matching source commit (LiteLLM, Telnyx pattern)
+            4. **Verdict**: SAFE / NEEDS ATTENTION / SUSPICIOUS with reasoning
+
+            ALWAYS leave a comment with your findings, even if everything looks clean.
+            A clean report confirming the update is legitimate is valuable — it shows the review happened.
