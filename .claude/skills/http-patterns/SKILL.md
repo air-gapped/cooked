@@ -1,13 +1,9 @@
 ---
 name: http-patterns
-description: HTTP handler patterns for Go 1.22+. Method routing, middleware, graceful shutdown.
+description: HTTP handler patterns for Go 1.22+. Covers ServeMux method routing, path parameters, middleware, ResponseWriter wrapping, request context, graceful shutdown, error responses, handler naming conventions.
 ---
 
 # HTTP Patterns
-
-Go 1.22+ patterns and project-specific conventions for HTTP handlers.
-
----
 
 ## Go 1.22: ServeMux Method Routing
 
@@ -218,14 +214,3 @@ Error pages use the same HTML template with:
 | `FeatureHandler(deps)` | `http.HandlerFunc` | `RenderHandler(deps)` |
 | `FeatureMiddleware(next)` | `http.Handler` | `RequestLogger(next)` |
 
----
-
-## What NOT to Do
-
-| Don't | Why |
-|-------|-----|
-| Check method with `if r.Method != "GET"` | Use Go 1.22+ method routing |
-| Call `w.Write` after handler returns | Causes panic or writes to wrong response |
-| Use `string` context keys | Collisions — use typed keys |
-| Ignore `http.ErrServerClosed` | It's expected from `Shutdown()` |
-| Release resources before shutdown completes | Handlers may still be using them |
