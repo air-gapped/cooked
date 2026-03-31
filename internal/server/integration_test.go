@@ -150,8 +150,8 @@ func TestIntegration_MarkdownWithMermaid(t *testing.T) {
 	_, _, body := getBody(t, srv.URL+"/"+upstream.URL+"/mermaid.md")
 
 	// Should include mermaid.js script reference
-	if !strings.Contains(body, "mermaid") {
-		t.Error("mermaid content not found in rendered page")
+	if !strings.Contains(body, "mermaid.min.js") {
+		t.Error("mermaid.min.js script not found in rendered page")
 	}
 }
 
@@ -621,8 +621,8 @@ func TestIntegration_DefaultThemeInOutput(t *testing.T) {
 	defer cleanup()
 
 	_, _, body := getBody(t, srv.URL+"/"+upstream.URL+"/themed.md")
-	if !strings.Contains(body, "dark") {
-		t.Error("expected dark theme reference in output")
+	if !strings.Contains(body, `data-theme="dark"`) {
+		t.Error("expected data-theme=\"dark\" attribute in output")
 	}
 }
 

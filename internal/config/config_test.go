@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -125,6 +126,8 @@ func TestParse_InvalidTheme(t *testing.T) {
 	_, err := Parse([]string{"--default-theme", "neon"})
 	if err == nil {
 		t.Error("expected error for invalid theme, got nil")
+	} else if !strings.Contains(err.Error(), "neon") {
+		t.Errorf("error should mention invalid value: %v", err)
 	}
 }
 
@@ -132,6 +135,8 @@ func TestParse_InvalidCacheMaxSize(t *testing.T) {
 	_, err := Parse([]string{"--cache-max-size", "notasize"})
 	if err == nil {
 		t.Error("expected error for invalid cache-max-size, got nil")
+	} else if !strings.Contains(err.Error(), "notasize") {
+		t.Errorf("error should mention invalid value: %v", err)
 	}
 }
 

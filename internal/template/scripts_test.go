@@ -71,8 +71,11 @@ func TestWriteScripts_ThemeToggleButton(t *testing.T) {
 		t.Error("missing theme toggle button lookup")
 	}
 	// Should have icon mappings
-	if !strings.Contains(script, `auto:`) && !strings.Contains(script, `light:`) {
-		t.Error("missing theme icon mappings")
+	if !strings.Contains(script, `auto:`) {
+		t.Error("missing auto icon mapping")
+	}
+	if !strings.Contains(script, `light:`) {
+		t.Error("missing light icon mapping")
 	}
 	// Should update button on click
 	if !strings.Contains(script, `addEventListener('click'`) {

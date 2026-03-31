@@ -262,10 +262,5 @@ func FuzzAllowlist(f *testing.F) {
 
 		// Must never panic
 		a.Allows(host)
-
-		// Nil allowlist allows everything
-		if a == nil && !a.Allows(host) {
-			t.Error("nil allowlist should allow all hosts")
-		}
 	})
 }
