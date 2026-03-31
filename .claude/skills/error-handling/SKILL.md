@@ -1,13 +1,9 @@
 ---
 name: error-handling
-description: Error handling patterns for Go 1.20+. Multi-error wrapping, performance traps, slog integration.
+description: Error handling patterns for Go 1.20+. Covers errors.Is, errors.As, errors.Join, sentinel errors, error wrapping, multi-error, slog error logging, defer cleanup, error types vs sentinels, performance traps.
 ---
 
 # Error Handling
-
-This skill covers Go 1.20+ error patterns and project-specific conventions. Assumes you know basic `if err != nil`.
-
----
 
 ## Go 1.20+: Multi-Error Support
 
@@ -248,15 +244,3 @@ func DoWork() (err error) {  // Named return
 }
 ```
 
----
-
-## What NOT to Do
-
-| Don't | Why |
-|-------|-----|
-| `errors.Unwrap()` with multi-errors | Returns nil — use `errors.Is`/`errors.As` |
-| Sentinel errors for expected outcomes | 6-117x slower than booleans |
-| `slog.Error("msg", "error", err.Error())` | Loses error chain — pass error directly |
-| Log AND return the same error | Causes duplicate logs up the stack |
-| `panic` for recoverable errors | Reserve for truly unrecoverable state |
-| Ignore deferred Close() errors | Can mask the real failure |
