@@ -18,7 +18,7 @@ cooked fetches the upstream URL, detects the file type, renders it to styled HTM
 - **MDX** — `.mdx` (JSX imports/exports and component tags are stripped before rendering)
 - **AsciiDoc** — `.adoc`, `.asciidoc`, `.asc` (rendered via [libasciidoc](https://github.com/bytesparadise/libasciidoc); `include::` directives are skipped for remote documents)
 - **Org-mode** — `.org` (rendered via [go-org](https://github.com/niklasfasching/go-org); title extracted from `#+TITLE` or first headline)
-- **Code** — `.py`, `.go`, `.js`, `.ts`, `.rs`, `.c`, `.h`, `.cpp`, `.hpp`, `.java`, `.rb`, `.lua`, `.pl`, `.sh`, `.bash`, `.zsh`, `.fish`, `.yaml`, `.yml`, `.json`, `.toml`, `.xml`, `.csv`, `.sql`, `.graphql`, `.tf`, `.hcl`, `.dockerfile`, `.diff`, `.patch` (plus `Dockerfile`, `Makefile`, `Jenkinsfile` by filename)
+- **Code** — 30+ languages including Go, Python, Rust, TypeScript, Java, C/C++, Ruby, Shell, SQL, HCL, and more (plus `Dockerfile`, `Makefile`, `Jenkinsfile` by filename)
 - **Plaintext** — `.txt`, `.text`, `.log`, `.conf`, `.cfg`, `.ini`, `.env`
 
 ## Quick start
