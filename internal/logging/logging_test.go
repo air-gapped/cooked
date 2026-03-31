@@ -9,31 +9,20 @@ import (
 	"testing"
 )
 
-func TestSetup_JSONOutput(t *testing.T) {
-	var buf bytes.Buffer
-	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
-	}))
+func TestSetup_SetsDefaultLogger(t *testing.T) {
+	before := slog.Default()
+	logger := Setup()
+	after := slog.Default()
 
-	logger.Info("test message", "key", "value")
-
-	var entry map[string]any
-	if err := json.Unmarshal(buf.Bytes(), &entry); err != nil {
-		t.Fatalf("output is not valid JSON: %v\nbody: %s", err, buf.String())
+	if logger == nil {
+		t.Fatal("Setup() returned nil")
+	}
+	if after == before {
+		t.Error("Setup() did not change slog.Default()")
 	}
 
-	if entry["msg"] != "test message" {
-		t.Errorf("msg = %v, want test message", entry["msg"])
-	}
-	if entry["key"] != "value" {
-		t.Errorf("key = %v, want value", entry["key"])
-	}
-	if _, ok := entry["time"]; !ok {
-		t.Error("missing time field")
-	}
-	if entry["level"] != "INFO" {
-		t.Errorf("level = %v, want INFO", entry["level"])
-	}
+	// Restore to avoid affecting other tests
+	slog.SetDefault(before)
 }
 
 func TestLogRequest_Fields(t *testing.T) {
