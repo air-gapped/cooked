@@ -58,16 +58,6 @@ The `--allowed-upstreams` flag restricts which upstream hosts cooked will fetch 
 Redirect targets are also validated against the allowlist.
 
 ```bash
-# Only allow fetching from two internal hosts
-./cooked --allowed-upstreams="cgit.internal,gitea.corp.example.com"
-
-# CIDR ranges for IP-based upstreams
-./cooked --allowed-upstreams="10.0.0.0/8,172.16.0.0/12"
-
-# Wildcard DNS patterns
-./cooked --allowed-upstreams="*.internal,*.corp.example.com"
-
-# Mixed: all three types together
 ./cooked --allowed-upstreams="*.internal,10.0.0.0/8,gitea.specific.host"
 ```
 
