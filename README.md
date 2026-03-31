@@ -1,6 +1,6 @@
 # cooked
 
-![Raw markdown on the left, rendered by cooked on the right](docs/raw-vs-cooked.png)
+![Raw markdown on the left, rendered by cooked on the right](docs/raw-vs-cooked.gif)
 
 A rendering proxy for air-gapped environments. Give it a raw document URL and it serves styled HTML. The binary is fully self-contained — all CSS, JavaScript, and templates are embedded. No CDN requests, no external resources.
 
