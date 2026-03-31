@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/air-gapped/cooked/compare/v1.3.0...v1.3.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* replace coverage theater TestSetup_JSONOutput with real Setup() test ([e57b850](https://github.com/air-gapped/cooked/commit/e57b850965615c8c06388e91c70087d35df3dba3))
+
 ## [1.3.0](https://github.com/air-gapped/cooked/compare/v1.2.3...v1.3.0) (2026-03-31)
 
 
