@@ -1,19 +1,29 @@
 ---
 name: docs-health
-description: Check CLAUDE.md and skills file sizes and line counts
-allowed-tools: Bash(wc *), Bash(stat *)
+description: Audit documentation health — file sizes, nested CLAUDE.md coverage, stale references, skill inventory. Triggers on doc audit, check docs, missing CLAUDE.md, bloated files, documentation drift, stale file references, skill line counts.
 ---
 
 # Documentation Health Check
 
-## CLAUDE.md
-!`stat -f "Size: %z bytes" CLAUDE.md`
+## Root CLAUDE.md
 !`wc -l < CLAUDE.md | xargs -I{} echo "Lines: {}"`
+!`wc -c < CLAUDE.md | xargs -I{} echo "Bytes: {}"`
 
-## Skills (bytes)
-!`wc -c .claude/skills/*/SKILL.md 2>/dev/null`
+## Nested CLAUDE.md files
+!`find internal/ -name CLAUDE.md -exec wc -l {} + 2>/dev/null || echo "None found"`
+
+## Missing CLAUDE.md (directories with 5+ source files but no CLAUDE.md)
+!`for dir in internal/*/; do count=$(find "$dir" -maxdepth 1 -name '*.go' ! -name '*_test.go' 2>/dev/null | wc -l); if [ "$count" -ge 5 ] && [ ! -f "$dir/CLAUDE.md" ]; then echo "MISSING: $dir ($count source files)"; fi; done`
+
+## Skills (lines per SKILL.md)
+!`wc -l .claude/skills/*/SKILL.md 2>/dev/null`
+
+## Stale file references in nested CLAUDE.md
+!`find internal/ -name CLAUDE.md 2>/dev/null | while read cmd; do dir=$(dirname "$cmd"); grep -oE '[a-z_]+\.go' "$cmd" 2>/dev/null | sort -u | while read f; do if [ ! -f "$dir/$f" ]; then echo "STALE: $cmd references $f (not found)"; fi; done; done`
 
 ## Guidelines
-- CLAUDE.md: Keep under 35k (warning at 40k)
-- Skills: Load on-demand, so size is less critical
-- If CLAUDE.md grows, move detailed content to skills
+- Root CLAUDE.md: keep under 500 lines
+- Nested CLAUDE.md: keep under 100 lines each
+- Skills: load on-demand, size less critical but prefer <150 lines with references/
+- If "MISSING" appears above, create a CLAUDE.md for that directory
+- If "STALE" appears above, fix the reference or remove it
