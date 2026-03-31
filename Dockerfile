@@ -31,7 +31,8 @@ RUN apk add --no-cache ca-certificates=20251003-r0 && update-ca-certificates
 WORKDIR /app
 
 COPY --from=builder /cooked /usr/local/bin/cooked
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["cooked", "--listen", "0.0.0.0:8080"]
+ENTRYPOINT ["entrypoint.sh", "--listen", "0.0.0.0:8080"]

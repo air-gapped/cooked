@@ -119,6 +119,26 @@ COPY my-internal-ca.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 ```
 
+#### Runtime injection (Kubernetes)
+
+If your CA certificates are distributed at runtime (e.g. by [trust-manager](https://cert-manager.io/docs/trust/trust-manager/)), mount them into `/usr/local/share/ca-certificates/`. cooked runs `update-ca-certificates` at startup before the Go process begins, so any `.crt` files in that directory are picked up automatically.
+
+```yaml
+volumeMounts:
+- name: internal-ca
+  mountPath: /usr/local/share/ca-certificates/internal-ca.crt
+  subPath: ca-certificates.crt    # key name from your trust-manager Bundle
+volumes:
+- name: internal-ca
+  configMap:
+    name: my-ca-bundle            # created by trust-manager
+```
+
+> **Important:**
+> - Files **must** have a `.crt` extension — `.pem` files are silently ignored by `update-ca-certificates`.
+> - Use `subPath` to mount individual files. Mounting the entire ConfigMap as a directory replaces all existing contents.
+> - `/etc/ssl/certs/` must be writable. If using `readOnlyRootFilesystem: true`, add an `emptyDir` volume on `/etc/ssl/certs`.
+
 ### Docker Compose
 
 ```yaml
