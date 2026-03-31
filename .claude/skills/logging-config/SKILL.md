@@ -1,6 +1,6 @@
 ---
 name: logging-config
-description: MANDATORY - All logging code must use slog with structured fields. Load before writing any logging.
+description: MANDATORY - All logging must use slog with structured JSON fields. Covers log/slog setup, structured logging, log levels, request logging, log message style, field naming. Load before writing any slog, log, or fmt.Print logging code.
 ---
 
 # Structured Logging Standards
