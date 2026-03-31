@@ -4,28 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Beads Issue Tracking
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This project uses **br** (beads_rust) for issue tracking.
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
+br ready              # Find available work
+br show <id>          # View issue details
+br update <id> -s in_progress  # Claim work
+br update <id> -s closed       # Complete work
+br sync --flush-only  # Flush DB to JSONL
 ```
 
 ### Plan-Beads Linking
 
 Every implementation plan item MUST have a matching beads issue. This ensures:
-- Progress is trackable across sessions via `bd list`/`bd ready`
-- Dependencies between work items are explicit via `bd dep`
+- Progress is trackable across sessions via `br list`/`br ready`
+- Dependencies between work items are explicit via `br dep`
 - History survives context compaction (beads persist, plans don't)
 
 **Rules:**
 - Create beads issues BEFORE starting implementation
-- Use `--notes="Plan: <plan-item-title>"` to link beads back to the plan
-- Set dependencies with `bd dep add` matching the plan's dependency graph
-- Mark `in_progress` when starting, `bd close` when done
+- Set dependencies with `br dep add` matching the plan's dependency graph
+- Mark `in_progress` when starting, close when done
 - Epic-level beads group related work items for overview
 
 ### Landing the Plane (Session Completion)
@@ -38,7 +37,7 @@ Every implementation plan item MUST have a matching beads issue. This ensures:
 4. **PUSH TO REMOTE** — This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   br sync --flush-only
    git push
    git status  # MUST show "up to date with origin"
    ```
