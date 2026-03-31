@@ -14,19 +14,6 @@ br update <id> -s closed       # Complete work
 br sync --flush-only  # Flush DB to JSONL
 ```
 
-### Plan-Beads Linking
-
-Every implementation plan item MUST have a matching beads issue. This ensures:
-- Progress is trackable across sessions via `br list`/`br ready`
-- Dependencies between work items are explicit via `br dep`
-- History survives context compaction (beads persist, plans don't)
-
-**Rules:**
-- Create beads issues BEFORE starting implementation
-- Set dependencies with `br dep add` matching the plan's dependency graph
-- Mark `in_progress` when starting, close when done
-- Epic-level beads group related work items for overview
-
 ### Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -182,7 +169,7 @@ A "fix" to a README typo is `docs:`, not `fix:`. A test-only change is `test:`, 
 
 ## Active Technologies
 
-- Go 1.24+ (primary language)
+- Go 1.26 (primary language)
 - `github.com/yuin/goldmark` — CommonMark + GFM markdown parser
 - `github.com/yuin/goldmark-highlighting` — syntax highlighting (chroma)
 - `go.abhg.dev/goldmark/mermaid` — mermaid diagram support (client-side rendering)
