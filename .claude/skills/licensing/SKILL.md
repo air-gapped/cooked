@@ -1,26 +1,11 @@
 ---
 name: licensing
-description: MANDATORY - Check dependency licenses before importing. Write original code, don't copy.
+description: MANDATORY - Check dependency licenses before importing. Covers license compatibility (MIT, Apache, BSD, GPL), adding dependencies, bundled assets, writing original code, copyright. Triggers on go get, import, add dependency, license check, copy code.
 ---
 
 # Licensing
 
-This project is **MIT** licensed. This skill covers dependency license compatibility and ethical code practices.
-
----
-
-## MIT: What It Means
-
-| Allowed | Required | Prohibited |
-|---------|----------|------------|
-| Commercial use | Include copyright notice | None |
-| Modification | Include license text | |
-| Distribution | | |
-| Private use | | |
-
-**Key point:** MIT is maximally permissive. Users can do almost anything with the code as long as they include the copyright and license notice.
-
----
+This project is **MIT** licensed.
 
 ## Compatible Dependency Licenses
 
@@ -147,48 +132,24 @@ If yes to all three, you're probably fine.
 
 ## Bundled Assets
 
-Static assets embedded in the binary must have compatible licenses AND be documented:
-
-**Location:** `embed/LICENSES.md`
+Static assets embedded in the binary must have compatible licenses.
 
 Current bundled assets:
-- mermaid.js — MIT ✓
-- github-markdown-css — MIT ✓
+- mermaid.js — MIT
+- github-markdown-css — MIT
 
 When adding bundled assets:
 1. Verify license compatibility
-2. Add license text to `embed/LICENSES.md`
-3. Note version in Makefile (pinned versions)
+2. Note version in Makefile (pinned with SHA-256 verification)
 
 ---
 
 ## License Headers
 
-Go files don't require license headers (the root LICENSE file covers everything).
-
-If you want to add headers for clarity in key files:
+Go files do not require license headers — the root LICENSE file covers everything. Optional header for key files:
 
 ```go
 // Copyright 2026 air-gapped
 // SPDX-License-Identifier: MIT
 ```
 
----
-
-## Quick Reference
-
-```
-Adding a dependency?
-  → Check license is in compatible list
-  → If not listed, investigate before using
-  → Prefer MIT/Apache/BSD — avoid copyleft
-
-Learning from another project?
-  → Understand the concept
-  → Write your own implementation
-  → Make it better
-
-Bundling static assets?
-  → Check license compatibility
-  → Document in embed/LICENSES.md
-```
