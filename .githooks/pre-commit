@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
-# br (beads_rust) pre-commit hook
-#
-# br is non-invasive — it never runs git commands itself.
-# This hook flushes SQLite → JSONL and stages the result.
+# Pre-commit hook: beads flush + quality checks
 
 set -e
 
@@ -35,3 +32,90 @@ if command -v br >/dev/null 2>&1; then
         fi
     fi
 fi
+
+# --- Quality checks ---
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+fail() {
+    echo "${RED}FAILED:${NC} $1"
+    exit 1
+}
+
+pass() {
+    echo "${GREEN}OK:${NC} $1"
+}
+
+# Large file check (1MB limit)
+MAX_SIZE=1048576
+for file in $(git diff --cached --name-only --diff-filter=ACM); do
+    if [ -f "$file" ]; then
+        size=$(wc -c < "$file" | tr -d ' ')
+        if [ "$size" -gt "$MAX_SIZE" ]; then
+            fail "$file is $(($size / 1024))KB (max 1MB)"
+        fi
+    fi
+done
+pass "no large files"
+
+# Blocklist check
+if [ -f ".blocklist" ]; then
+    for file in $(git diff --cached --name-only --diff-filter=ACM); do
+        if [ -f "$file" ]; then
+            while IFS= read -r pattern || [ -n "$pattern" ]; do
+                case "$pattern" in
+                    ""|\#*) continue ;;
+                esac
+                if grep -qF "$pattern" "$file" 2>/dev/null; then
+                    fail "blocklisted pattern '$pattern' found in $file"
+                fi
+            done < .blocklist
+        fi
+    done
+    pass "blocklist"
+fi
+
+# Go checks (only if Go files are staged)
+STAGED_GO=$(git diff --cached --name-only --diff-filter=ACM -- '*.go' 2>/dev/null || true)
+
+if [ -n "$STAGED_GO" ]; then
+    # go fmt
+    if command -v gofmt >/dev/null 2>&1; then
+        unformatted=$(gofmt -l . 2>/dev/null | grep -v vendor || true)
+        if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            fail "run 'go fmt ./...' to fix"
+        fi
+        pass "go fmt"
+    fi
+
+    # go vet
+    if command -v go >/dev/null 2>&1; then
+        if ! go vet ./... 2>/dev/null; then
+            fail "go vet found issues"
+        fi
+        pass "go vet"
+    fi
+
+    # golangci-lint
+    GOLANGCI_LINT="$(command -v golangci-lint 2>/dev/null || echo "$(go env GOPATH)/bin/golangci-lint")"
+    if [ -x "$GOLANGCI_LINT" ]; then
+        if ! "$GOLANGCI_LINT" run --timeout=5m ./... 2>/dev/null; then
+            fail "golangci-lint found issues (run 'golangci-lint run ./...' for details)"
+        fi
+        pass "golangci-lint"
+    fi
+fi
+
+# Gitleaks (staged files only)
+if command -v gitleaks >/dev/null 2>&1; then
+    if ! gitleaks protect --staged --no-banner; then
+        fail "gitleaks found secrets"
+    fi
+    pass "gitleaks"
+fi
+
+echo ""
+echo "${GREEN}All checks passed${NC}"
