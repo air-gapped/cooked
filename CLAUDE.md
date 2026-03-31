@@ -155,13 +155,10 @@ A "fix" to a README typo is `docs:`, not `fix:`. A test-only change is `test:`, 
 
 ---
 
----
-
 ## Active Technologies
 
-- Go 1.26 (primary language)
-- `github.com/yuin/goldmark` — CommonMark + GFM markdown parser
-- `github.com/yuin/goldmark-highlighting` — syntax highlighting (chroma)
-- `go.abhg.dev/goldmark/mermaid` — mermaid diagram support (client-side rendering)
-- github-markdown-css — GitHub-style CSS (light + dark, embedded)
-- mermaid.js — client-side diagram rendering (embedded)
+- **Go 1.26** — primary language
+- **goldmark** — markdown rendering (with mermaid + syntax highlighting)
+- **libasciidoc** — AsciiDoc rendering
+- **go-org** — Org-mode rendering
+- **github-markdown-css + mermaid.js** — embedded assets (no CDN)
