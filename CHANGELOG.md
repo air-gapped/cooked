@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/air-gapped/cooked/compare/v1.2.3...v1.3.0) (2026-03-31)
+
+
+### Features
+
+* add dependency review workflow with CVE check and AI security analysis ([a5df1fd](https://github.com/air-gapped/cooked/commit/a5df1fd281fb125793124fc7310edf3b09516f20))
+* run update-ca-certificates at container startup for runtime CA injection ([0b460bb](https://github.com/air-gapped/cooked/commit/0b460bb174dc4d75190f25a539db0eea7fd4c9e2))
+
 ## [1.2.3](https://github.com/air-gapped/cooked/compare/v1.2.2...v1.2.3) (2026-03-26)
 
 
