@@ -30,4 +30,6 @@ coverage.html
 
 # bv (beads viewer) local config and caches
 .bv/
+# Playwright (MCP and CLI mode output directories)
 .playwright-mcp/
+.playwright-cli/
