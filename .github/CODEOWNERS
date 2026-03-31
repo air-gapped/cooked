@@ -1,0 +1,10 @@
+# Default owner
+* @wthrbtn
+
+# CI/CD and supply chain sensitive paths
+.github/workflows/ @wthrbtn
+.github/CODEOWNERS @wthrbtn
+renovate.json @wthrbtn
+go.mod @wthrbtn
+go.sum @wthrbtn
+Dockerfile @wthrbtn
