@@ -27,3 +27,6 @@ coverage.html
 
 # Local scratch space (tests, lab notes, experiments)
 .local/
+
+# bv (beads viewer) local config and caches
+.bv/

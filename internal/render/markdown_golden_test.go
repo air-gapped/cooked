@@ -96,7 +96,7 @@ func TestMDXGolden(t *testing.T) {
 			}
 
 			preprocessed := PreprocessMDX(input)
-			got, _, err := r.Render(preprocessed)
+			got, meta, err := r.Render(preprocessed)
 			if err != nil {
 				t.Fatalf("render failed: %v", err)
 			}
@@ -124,6 +124,11 @@ func TestMDXGolden(t *testing.T) {
 					"got %d bytes, want %d bytes\n"+
 					"first diff at byte %d",
 					name, len(got), len(want), firstDiff(got, want))
+			}
+
+			// Sanity check metadata (MDX files still have headings after preprocessing)
+			if meta.HeadingCount == 0 {
+				t.Error("expected at least one heading in MDX metadata")
 			}
 		})
 	}

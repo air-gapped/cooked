@@ -159,6 +159,34 @@ func TestCache_ConcurrentAccess(t *testing.T) {
 	if c.Len() > 10 {
 		t.Errorf("Len = %d, expected <= 10", c.Len())
 	}
+
+	// Verify data is retrievable after concurrent writes
+	entry, status := c.Get("key0")
+	if status == StatusMiss {
+		t.Error("expected key0 to be cached after concurrent writes")
+	}
+	if string(entry.HTML) != "data" {
+		t.Errorf("key0 HTML = %q, want \"data\"", entry.HTML)
+	}
+}
+
+func TestCache_OversizedEntry(t *testing.T) {
+	c := New(5*time.Minute, 100) // maxSize = 100 bytes
+
+	// Put an entry larger than maxSize — should be silently dropped
+	c.Put("big", Entry{HTML: []byte("x"), Size: 200})
+
+	_, status := c.Get("big")
+	if status != StatusMiss {
+		t.Error("oversized entry should not be cached")
+	}
+
+	// Cache should remain functional after oversized Put
+	c.Put("small", Entry{HTML: []byte("y"), Size: 10})
+	_, status = c.Get("small")
+	if status == StatusMiss {
+		t.Error("normal entry after oversized Put should be cached")
+	}
 }
 
 func TestCache_KeyIsFullURL(t *testing.T) {

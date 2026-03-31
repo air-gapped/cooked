@@ -1,32 +1,16 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Beads Issue Tracking
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This project uses **br** (beads_rust) for issue tracking.
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
+br ready              # Find available work
+br show <id>          # View issue details
+br update <id> -s in_progress  # Claim work
+br update <id> -s closed       # Complete work
+br sync --flush-only  # Flush DB to JSONL
 ```
-
-### Plan-Beads Linking
-
-Every implementation plan item MUST have a matching beads issue. This ensures:
-- Progress is trackable across sessions via `bd list`/`bd ready`
-- Dependencies between work items are explicit via `bd dep`
-- History survives context compaction (beads persist, plans don't)
-
-**Rules:**
-- Create beads issues BEFORE starting implementation
-- Use `--notes="Plan: <plan-item-title>"` to link beads back to the plan
-- Set dependencies with `bd dep add` matching the plan's dependency graph
-- Mark `in_progress` when starting, `bd close` when done
-- Epic-level beads group related work items for overview
 
 ### Landing the Plane (Session Completion)
 
@@ -38,7 +22,7 @@ Every implementation plan item MUST have a matching beads issue. This ensures:
 4. **PUSH TO REMOTE** — This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
+   br sync --flush-only
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -74,23 +58,15 @@ When in doubt about ANY operation that could lose work, ask first.
 
 ## Working Guidelines
 
-**MANDATORY: Check latest versions before adding ANY dependency:**
-
-You MUST verify the latest version of every dependency before running `go get`. Training data is stale — treat all version knowledge as wrong until verified. This is not optional.
-
-Before adding a dependency:
-1. `gh api repos/OWNER/REPO/releases/latest --jq '.tag_name'` — check latest release
-2. If no releases: `gh api repos/OWNER/REPO/tags --jq '.[0].name'` — check latest tag
-3. Compare with what `go get` would pull — if it's older, pin to latest explicitly
-4. Check the repo's README or CHANGELOG for breaking changes
+**MANDATORY: Check latest versions before adding ANY dependency.**
+Training data is stale — treat all version knowledge as wrong until verified.
 
 ```bash
-# Example: before go get github.com/foo/bar
-gh api repos/foo/bar/releases/latest --jq '.tag_name'
-# Then: go get github.com/foo/bar@v1.2.3
+gh api repos/OWNER/REPO/releases/latest --jq '.tag_name'  # check latest
+go get github.com/foo/bar@v1.2.3                           # pin explicitly
 ```
 
-Never run a bare `go get github.com/foo/bar` without checking the latest version first. Never trust version numbers from memory or training data.
+Never run bare `go get` without checking the latest version first.
 
 **Never assume dates:**
 - Run `date` to confirm the current year before searching for "latest" anything
@@ -140,34 +116,6 @@ The upstream URL is everything after the first `/` in the path. cooked fetches i
 - `GET /healthz` — Health check (200 OK)
 - `GET /_cooked/` — Reserved namespace for embedded assets (mermaid.min.js, etc.)
 
-### Planned Packages
-
-```
-internal/
-  server/       # HTTP server, routing, middleware
-  render/       # Markdown/code rendering (goldmark, chroma)
-  fetch/        # Upstream HTTP client, caching
-  rewrite/      # Relative URL rewriting
-  sanitize/     # HTML sanitization
-  template/     # HTML template execution
-```
-
-Packages will be created as code is written. Don't create empty packages.
-
----
-
-## Directory Structure
-
-```
-cmd/cooked/          # Binary entry point (main.go)
-internal/            # All Go packages
-embed/               # go:embed assets (CSS, JS) — populated by make deps
-testdata/            # Test fixtures, golden files
-  golden/            # Expected HTML output
-  fixtures/          # Input test fixtures
-.claude/skills/      # Claude Code skill files
-```
-
 ---
 
 ## Development
@@ -183,13 +131,6 @@ make docker      # Build Docker image
 make clean       # Remove binary + downloaded assets
 make lint        # Run golangci-lint + gitleaks
 make lint-go     # Run golangci-lint only
-```
-
-### Pre-commit
-
-Always run before committing:
-```bash
-make lint
 ```
 
 ### Conventional Commits
@@ -214,44 +155,10 @@ A "fix" to a README typo is `docs:`, not `fix:`. A test-only change is `test:`, 
 
 ---
 
-## Testing
-
-See `testing` skill for patterns (fakes over mocks, golden files for HTML output, fuzzing, goleak, httptest).
-
-### Key patterns
-
-- **Golden files** are the primary pattern for testing HTML rendering output
-- **httptest** for integration testing the full request cycle
-- **Fuzz tests** for URL parsing, MDX preprocessing, HTML sanitization
-
-```bash
-go test ./...           # All tests
-go test -race ./...     # With race detection
-go test -update ./...   # Regenerate golden files
-```
-
----
-
-## Skills Reference
-
-| Skill | Description |
-|-------|-------------|
-| `project-layout` | File and directory naming conventions |
-| `http-patterns` | Go 1.22+ routing, middleware, graceful shutdown |
-| `error-handling` | Go 1.20+ error patterns, slog integration |
-| `testing` | Fakes over mocks, golden files, goleak, httptest |
-| `logging-config` | Structured JSON logging via slog |
-| `licensing` | MIT compatibility, dependency checks, write original code |
-
-Skills are in `.claude/skills/`. Claude loads them automatically when relevant.
-
----
-
 ## Active Technologies
 
-- Go 1.24+ (primary language)
-- `github.com/yuin/goldmark` — CommonMark + GFM markdown parser
-- `github.com/yuin/goldmark-highlighting` — syntax highlighting (chroma)
-- `go.abhg.dev/goldmark/mermaid` — mermaid diagram support (client-side rendering)
-- github-markdown-css — GitHub-style CSS (light + dark, embedded)
-- mermaid.js — client-side diagram rendering (embedded)
+- **Go 1.26** — primary language
+- **goldmark** — markdown rendering (with mermaid + syntax highlighting)
+- **libasciidoc** — AsciiDoc rendering
+- **go-org** — Org-mode rendering
+- **github-markdown-css + mermaid.js** — embedded assets (no CDN)
