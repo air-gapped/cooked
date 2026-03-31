@@ -139,34 +139,6 @@ The upstream URL is everything after the first `/` in the path. cooked fetches i
 - `GET /healthz` — Health check (200 OK)
 - `GET /_cooked/` — Reserved namespace for embedded assets (mermaid.min.js, etc.)
 
-### Planned Packages
-
-```
-internal/
-  server/       # HTTP server, routing, middleware
-  render/       # Markdown/code rendering (goldmark, chroma)
-  fetch/        # Upstream HTTP client, caching
-  rewrite/      # Relative URL rewriting
-  sanitize/     # HTML sanitization
-  template/     # HTML template execution
-```
-
-Packages will be created as code is written. Don't create empty packages.
-
----
-
-## Directory Structure
-
-```
-cmd/cooked/          # Binary entry point (main.go)
-internal/            # All Go packages
-embed/               # go:embed assets (CSS, JS) — populated by make deps
-testdata/            # Test fixtures, golden files
-  golden/            # Expected HTML output
-  fixtures/          # Input test fixtures
-.claude/skills/      # Claude Code skill files
-```
-
 ---
 
 ## Development
@@ -228,21 +200,6 @@ go test ./...           # All tests
 go test -race ./...     # With race detection
 go test -update ./...   # Regenerate golden files
 ```
-
----
-
-## Skills Reference
-
-| Skill | Description |
-|-------|-------------|
-| `project-layout` | File and directory naming conventions |
-| `http-patterns` | Go 1.22+ routing, middleware, graceful shutdown |
-| `error-handling` | Go 1.20+ error patterns, slog integration |
-| `testing` | Fakes over mocks, golden files, goleak, httptest |
-| `logging-config` | Structured JSON logging via slog |
-| `licensing` | MIT compatibility, dependency checks, write original code |
-
-Skills are in `.claude/skills/`. Claude loads them automatically when relevant.
 
 ---
 
