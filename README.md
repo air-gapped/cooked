@@ -41,8 +41,6 @@ make build   # Build the binary
 | `--default-theme` | `COOKED_DEFAULT_THEME` | `auto` | Default theme: auto, light, or dark |
 | `--tls-skip-verify` | `COOKED_TLS_SKIP_VERIFY` | `false` | Disable TLS certificate verification for upstream fetches |
 
-All flags have environment variable equivalents prefixed with `COOKED_`.
-
 ## Security
 
 ### Allowed upstreams
