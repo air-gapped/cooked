@@ -185,22 +185,6 @@ A "fix" to a README typo is `docs:`, not `fix:`. A test-only change is `test:`, 
 
 ---
 
-## Testing
-
-See `testing` skill for patterns (fakes over mocks, golden files for HTML output, fuzzing, goleak, httptest).
-
-### Key patterns
-
-- **Golden files** are the primary pattern for testing HTML rendering output
-- **httptest** for integration testing the full request cycle
-- **Fuzz tests** for URL parsing, MDX preprocessing, HTML sanitization
-
-```bash
-go test ./...           # All tests
-go test -race ./...     # With race detection
-go test -update ./...   # Regenerate golden files
-```
-
 ---
 
 ## Active Technologies
