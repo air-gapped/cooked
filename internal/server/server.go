@@ -218,7 +218,12 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	ct := result.ContentType
+	if ct == "" {
+		ct = http.DetectContentType(result.Body)
+	}
+	w.Header().Set("Content-Type", ct)
+	w.Header().Set("Cache-Control", "public, max-age=300")
 	w.Write(result.Body)
 }
 
@@ -363,7 +368,11 @@ func (s *Server) handleRender(w http.ResponseWriter, r *http.Request) {
 	// Rewrite relative URLs
 	switch fileInfo.ContentType {
 	case render.TypeMarkdown, render.TypeMDX, render.TypeAsciiDoc, render.TypeOrg:
-		htmlContent = rewrite.RelativeURLs(htmlContent, rawUpstream, s.cfg.BaseURL)
+		rawPrefix := "/_cooked/raw/"
+		if s.cfg.BaseURL != "" {
+			rawPrefix = strings.TrimRight(s.cfg.BaseURL, "/") + rawPrefix
+		}
+		htmlContent = rewrite.RelativeURLs(htmlContent, rawUpstream, s.cfg.BaseURL, rawPrefix)
 	}
 
 	// Load embedded CSS

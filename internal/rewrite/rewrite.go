@@ -15,9 +15,10 @@ var hrefReSingle = regexp.MustCompile(`(?i)((?:href|src)\s*=\s*)(')([^']+)(')`)
 
 // RelativeURLs rewrites relative URLs in HTML content.
 // Renderable file links (markdown, AsciiDoc, Org) are rewritten through cooked (e.g. /https://upstream/path/CONTRIBUTING.md).
-// Non-renderable file links (images, etc.) are rewritten to point directly at upstream.
+// Non-renderable src attributes (images, video, etc.) are proxied through rawProxyPrefix when set.
+// Non-renderable href attributes point directly at upstream.
 // Absolute URLs are left untouched.
-func RelativeURLs(html []byte, upstreamURL, baseURL string) []byte {
+func RelativeURLs(html []byte, upstreamURL, baseURL, rawProxyPrefix string) []byte {
 	// Parse upstream URL to determine base path
 	u, err := url.Parse(upstreamURL)
 	if err != nil {
@@ -84,7 +85,11 @@ func RelativeURLs(html []byte, upstreamURL, baseURL string) []byte {
 				return []byte(attrEq + quote + cookedPrefix + resolved + query + fragment + quote)
 			}
 
-			// Non-markdown links point directly to upstream
+			// Non-renderable: proxy src attributes through raw, leave href direct
+			isSrc := strings.HasPrefix(strings.ToLower(strings.TrimSpace(attrEq)), "src")
+			if isSrc && rawProxyPrefix != "" {
+				return []byte(attrEq + quote + rawProxyPrefix + resolved + query + fragment + quote)
+			}
 			return []byte(attrEq + quote + resolved + query + fragment + quote)
 		}
 	}
