@@ -1,0 +1,30 @@
+name: Sign Helm Chart (one-off)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sign:
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      id-token: write
+    environment: release
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3 # v3.9.0
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Sign chart by digest
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          OUTPUT=$(helm pull oci://ghcr.io/${OWNER}/charts/cooked --version 1.4.0 2>&1)
+          echo "$OUTPUT"
+          DIGEST=$(echo "$OUTPUT" | grep -oP 'sha256:[a-f0-9]+')
+          echo "Signing ghcr.io/${OWNER}/charts/cooked@${DIGEST}"
+          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked@${DIGEST}"
