@@ -117,7 +117,14 @@ jobs:
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
 
-      - name: Sign image with cosign
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          image: ghcr.io/${{ github.repository }}@${{ steps.build-push.outputs.digest }}
+          output-file: sbom.spdx.json
+          format: spdx-json
+
+      - name: Sign image and attach SBOM
         env:
           DIGEST: ${{ steps.build-push.outputs.digest }}
           REPO: ${{ github.repository }}
@@ -129,6 +136,14 @@ jobs:
           for i in $(seq 1 $MAX_RETRIES); do
             cosign sign --yes "$IMAGE" && break
             echo "cosign attempt $i/$MAX_RETRIES failed, retrying in ${DELAY}s..."
+            sleep $DELAY
+            DELAY=$((DELAY * 2))
+          done
+          echo "Attaching SBOM attestation"
+          DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            cosign attest --yes --predicate sbom.spdx.json --type spdxjson "$IMAGE" && break
+            echo "cosign attest attempt $i/$MAX_RETRIES failed, retrying in ${DELAY}s..."
             sleep $DELAY
             DELAY=$((DELAY * 2))
           done
