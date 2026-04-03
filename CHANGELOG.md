@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/air-gapped/cooked/compare/v1.4.1...v1.5.0) (2026-04-03)
+
+
+### Features
+
+* serve docs assets at /_cooked/docs/ for embedded README images ([2bf4d95](https://github.com/air-gapped/cooked/commit/2bf4d95b3c5cd9196d25261e43b9ee7a9e09a63f))
+
 ## [1.4.1](https://github.com/air-gapped/cooked/compare/v1.4.0...v1.4.1) (2026-04-03)
 
 
