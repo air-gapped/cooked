@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/air-gapped/cooked/compare/v1.4.0...v1.4.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* correct Chart.yaml version to 1.4.0 and fix release-please config ([e9527eb](https://github.com/air-gapped/cooked/commit/e9527eb0e32182e906d9c44e85b33d1d61fe8003))
+
 ## [1.4.0](https://github.com/air-gapped/cooked/compare/v1.3.2...v1.4.0) (2026-04-03)
 
 
