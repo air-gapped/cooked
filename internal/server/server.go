@@ -116,7 +116,11 @@ func (s *Server) Handler() http.Handler {
 	return h
 }
 
-var favicon = []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">🍳</text></svg>`)
+var favicon = []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
+	`<path d="M16 2C14 7 11 10 9 13c-2.5 3.5-3.5 6-3.5 9C5.5 27 10 31 16 31s10.5-4 10.5-9c0-3-1-5.5-3.5-9-2-3-5-6-7-11z" fill="#f97316"/>` +
+	`<path d="M16 13c-1.2 3-2.8 5-4 7-1 1.5-1.5 3-1.5 4.5 0 3 2.5 5.5 5.5 5.5s5.5-2.5 5.5-5.5c0-1.5-.5-3-1.5-4.5-1.2-2-2.8-4-4-7z" fill="#fbbf24"/>` +
+	`<path d="M16 21c-.6 1.2-1.2 2-1.7 3-.3.5-.5 1.2-.5 1.8 0 1.2 1 2.2 2.2 2.2s2.2-1 2.2-2.2c0-.6-.2-1.3-.5-1.8-.5-1-1.1-1.8-1.7-3z" fill="#fef3c7"/>` +
+	`</svg>`)
 
 func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
