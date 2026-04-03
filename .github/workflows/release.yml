@@ -164,7 +164,12 @@ jobs:
         uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3 # v3.9.0
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "${GITHUB_TOKEN}" | helm registry login ghcr.io -u "${ACTOR}" --password-stdin
+          echo "${GITHUB_TOKEN}" | cosign login ghcr.io -u "${ACTOR}" --password-stdin
 
       - name: Package and push
         id: push-chart
