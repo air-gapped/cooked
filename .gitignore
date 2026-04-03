@@ -33,3 +33,6 @@ coverage.html
 # Playwright (MCP and CLI mode output directories)
 .playwright-mcp/
 .playwright-cli/
+
+# ideas
+.ideas/
