@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/air-gapped/cooked/compare/v1.3.1...v1.3.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* sign Docker images with cosign and attach SBOM attestations ([cfac0c3](https://github.com/air-gapped/cooked/commit/cfac0c378e7a230be7590493d1a8d2d41b65648f))
+
 ## [1.3.1](https://github.com/air-gapped/cooked/compare/v1.3.0...v1.3.1) (2026-03-31)
 
 
