@@ -40,7 +40,7 @@ func newIntegrationServer(t *testing.T, opts ...func(*config.Config)) (*httptest
 	}
 
 	// Disable SSRF dial protection for tests (httptest servers bind to 127.0.0.1).
-	s := New(cfg, "v0.1.0-test", assets, fetch.WithSSRFProtection(false))
+	s := New(cfg, "v0.1.0-test", assets, nil, fetch.WithSSRFProtection(false))
 	srv := httptest.NewServer(s.Handler())
 	return srv, srv.Close
 }

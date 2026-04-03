@@ -33,6 +33,7 @@ type Server struct {
 	orgRender      *render.OrgRenderer
 	tmpl           *cookedtemplate.Renderer
 	assets         fs.FS
+	docsAssets     fs.FS
 	allowlist      *Allowlist
 	trustedProxies []*net.IPNet
 	mux            *http.ServeMux
@@ -41,7 +42,7 @@ type Server struct {
 
 // New creates a new cooked server with all dependencies.
 // Extra fetch options can be passed for testing (e.g. disabling SSRF protection).
-func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fetch.Option) *Server {
+func New(cfg *config.Config, version string, assets fs.FS, docsAssets fs.FS, extraFetchOpts ...fetch.Option) *Server {
 	allowlist := ParseAllowlist(cfg.AllowedUpstreams)
 
 	// Build fetch client options.
@@ -83,6 +84,7 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 		orgRender:      render.NewOrgRenderer(),
 		tmpl:           cookedtemplate.NewRenderer(),
 		assets:         assets,
+		docsAssets:     docsAssets,
 		allowlist:      allowlist,
 		trustedProxies: parseTrustedProxies(cfg.TrustedProxies),
 		mux:            http.NewServeMux(),
@@ -96,6 +98,7 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /_cooked/docs", s.handleDocs)
+	s.mux.HandleFunc("GET /_cooked/docs/{path...}", s.handleDocsAsset)
 	s.mux.HandleFunc("GET /_cooked/raw/{upstream...}", s.handleRaw)
 	s.mux.HandleFunc("GET /_cooked/{path...}", s.handleAsset)
 	s.mux.HandleFunc("GET /.well-known/{path...}", s.handleWellKnown)
@@ -168,6 +171,22 @@ func (s *Server) handleDocs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Write(s.readmePage)
+}
+
+func (s *Server) handleDocsAsset(w http.ResponseWriter, r *http.Request) {
+	if s.docsAssets == nil {
+		http.NotFound(w, r)
+		return
+	}
+	assetPath := r.PathValue("path")
+	data, err := fs.ReadFile(s.docsAssets, assetPath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", http.DetectContentType(data))
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Write(data)
 }
 
 func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {

@@ -35,7 +35,7 @@ func newTestServer(t *testing.T, cfg *config.Config) *Server {
 
 	// When AllowedUpstreams is set, SSRF dial protection is automatically
 	// disabled by server.New(). No extra fetch options needed.
-	return New(cfg, "v0.1.0-test", assets)
+	return New(cfg, "v0.1.0-test", assets, nil)
 }
 
 func TestHealthz(t *testing.T) {
@@ -499,7 +499,7 @@ func TestDocsPage(t *testing.T) {
 		"project-readme.md":         {Data: []byte("# Project Docs\n\nWelcome to cooked.\n")},
 	}
 
-	s := New(cfg, "v0.1.0-test", assets)
+	s := New(cfg, "v0.1.0-test", assets, nil)
 	srv := httptest.NewServer(s.Handler())
 	defer srv.Close()
 

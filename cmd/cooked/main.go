@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	cookeddocs "github.com/air-gapped/cooked/docs"
 	cookedembed "github.com/air-gapped/cooked/embed"
 	"github.com/air-gapped/cooked/internal/config"
 	"github.com/air-gapped/cooked/internal/server"
@@ -59,7 +60,7 @@ func main() {
 	)
 
 	// Create server with all dependencies
-	srv := server.New(cfg, version, cookedembed.Assets)
+	srv := server.New(cfg, version, cookedembed.Assets, cookeddocs.Assets)
 
 	httpServer := &http.Server{
 		Addr:              cfg.Listen,
