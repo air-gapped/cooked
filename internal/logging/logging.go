@@ -45,6 +45,7 @@ type RequestFields struct {
 	TotalMs     int64
 	ContentType string
 	Bytes       int64
+	ClientIP    string
 }
 
 // LogRequest logs a completed request with structured fields.
@@ -56,7 +57,7 @@ func LogRequest(logger *slog.Logger, f RequestFields) {
 		level = slog.LevelWarn
 	}
 
-	logger.Log(context.Background(), level, "request",
+	attrs := []any{
 		"method", f.Method,
 		"path", f.Path,
 		"upstream", f.Upstream,
@@ -67,7 +68,11 @@ func LogRequest(logger *slog.Logger, f RequestFields) {
 		"total_ms", f.TotalMs,
 		"content_type", f.ContentType,
 		"bytes", f.Bytes,
-	)
+	}
+	if f.ClientIP != "" {
+		attrs = append(attrs, "client_ip", f.ClientIP)
+	}
+	logger.Log(context.Background(), level, "request", attrs...)
 }
 
 // ByteCountingWriter wraps http.ResponseWriter to capture status code and bytes written.

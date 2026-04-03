@@ -21,6 +21,7 @@ type Config struct {
 	DefaultTheme     string
 	TLSSkipVerify    bool
 	FrameAncestors   string
+	TrustedProxies   string
 }
 
 // Parse reads configuration from CLI flags with environment variable fallback.
@@ -39,6 +40,7 @@ func Parse(args []string) (*Config, error) {
 	fs.StringVar(&cfg.DefaultTheme, "default-theme", envOr("COOKED_DEFAULT_THEME", "auto"), "Default theme: auto, light, or dark")
 	fs.BoolVar(&cfg.TLSSkipVerify, "tls-skip-verify", envBoolOr("COOKED_TLS_SKIP_VERIFY", false), "Disable TLS certificate verification for upstream fetches")
 	fs.StringVar(&cfg.FrameAncestors, "frame-ancestors", envOr("COOKED_FRAME_ANCESTORS", "none"), "CSP frame-ancestors: none, self, or space-separated origins (e.g. \"https://gitea.internal\")")
+	fs.StringVar(&cfg.TrustedProxies, "trusted-proxies", envOr("COOKED_TRUSTED_PROXIES", ""), "Comma-separated trusted proxy IPs or CIDRs for X-Forwarded-For (e.g. \"127.0.0.1,10.0.0.0/8\")")
 
 	if err := fs.Parse(args); err != nil {
 		return nil, err

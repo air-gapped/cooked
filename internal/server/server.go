@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -33,6 +34,7 @@ type Server struct {
 	tmpl           *cookedtemplate.Renderer
 	assets         fs.FS
 	allowlist      *Allowlist
+	trustedProxies []*net.IPNet
 	mux            *http.ServeMux
 	readmePage     []byte // pre-rendered docs page (nil if README not embedded)
 }
@@ -82,6 +84,7 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 		tmpl:           cookedtemplate.NewRenderer(),
 		assets:         assets,
 		allowlist:      allowlist,
+		trustedProxies: parseTrustedProxies(cfg.TrustedProxies),
 		mux:            http.NewServeMux(),
 	}
 
@@ -518,6 +521,7 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 			TotalMs:     time.Since(start).Milliseconds(),
 			ContentType: wrapped.Header().Get("X-Cooked-Content-Type"),
 			Bytes:       wrapped.Bytes,
+			ClientIP:    s.clientIP(r),
 		})
 	})
 }
@@ -567,4 +571,87 @@ func searchString(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// parseTrustedProxies parses a comma-separated list of IPs and CIDRs into
+// a list of *net.IPNet for matching. Bare IPs are converted to /32 or /128.
+func parseTrustedProxies(raw string) []*net.IPNet {
+	if raw == "" {
+		return nil
+	}
+	var nets []*net.IPNet
+	for _, entry := range strings.Split(raw, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		if strings.Contains(entry, "/") {
+			_, cidr, err := net.ParseCIDR(entry)
+			if err == nil {
+				nets = append(nets, cidr)
+			}
+		} else {
+			ip := net.ParseIP(entry)
+			if ip != nil {
+				bits := 32
+				if ip.To4() == nil {
+					bits = 128
+				}
+				nets = append(nets, &net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)})
+			}
+		}
+	}
+	return nets
+}
+
+// clientIP returns the client IP for logging. If the direct peer is in the
+// trusted proxy list and X-Forwarded-For is present, the rightmost non-trusted
+// IP is returned. Otherwise, the peer IP from RemoteAddr is returned.
+func (s *Server) clientIP(r *http.Request) string {
+	peerIP, _, _ := net.SplitHostPort(r.RemoteAddr)
+	if len(s.trustedProxies) == 0 {
+		return peerIP
+	}
+
+	ip := net.ParseIP(peerIP)
+	if ip == nil {
+		return peerIP
+	}
+
+	trusted := false
+	for _, cidr := range s.trustedProxies {
+		if cidr.Contains(ip) {
+			trusted = true
+			break
+		}
+	}
+	if !trusted {
+		return peerIP
+	}
+
+	xff := r.Header.Get("X-Forwarded-For")
+	if xff == "" {
+		return peerIP
+	}
+
+	// Walk X-Forwarded-For right-to-left, return first non-trusted IP
+	parts := strings.Split(xff, ",")
+	for i := len(parts) - 1; i >= 0; i-- {
+		candidate := strings.TrimSpace(parts[i])
+		cip := net.ParseIP(candidate)
+		if cip == nil {
+			return candidate
+		}
+		isTrusted := false
+		for _, cidr := range s.trustedProxies {
+			if cidr.Contains(cip) {
+				isTrusted = true
+				break
+			}
+		}
+		if !isTrusted {
+			return candidate
+		}
+	}
+	return peerIP
 }

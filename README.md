@@ -43,6 +43,7 @@ make build   # Build the binary
 | `--default-theme` | `COOKED_DEFAULT_THEME` | `auto` | Default theme: auto, light, or dark |
 | `--tls-skip-verify` | `COOKED_TLS_SKIP_VERIFY` | `false` | Disable TLS certificate verification for upstream fetches |
 | `--frame-ancestors` | `COOKED_FRAME_ANCESTORS` | `none` | CSP frame-ancestors: `none`, `self`, or space-separated origins |
+| `--trusted-proxies` | `COOKED_TRUSTED_PROXIES` | *(empty)* | Comma-separated trusted proxy IPs/CIDRs for `X-Forwarded-For` client IP extraction |
 
 ## Security
 
