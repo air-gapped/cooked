@@ -42,6 +42,7 @@ make build   # Build the binary
 | `--base-url` | `COOKED_BASE_URL` | *(auto-detect)* | Public base URL of cooked |
 | `--default-theme` | `COOKED_DEFAULT_THEME` | `auto` | Default theme: auto, light, or dark |
 | `--tls-skip-verify` | `COOKED_TLS_SKIP_VERIFY` | `false` | Disable TLS certificate verification for upstream fetches |
+| `--frame-ancestors` | `COOKED_FRAME_ANCESTORS` | `none` | CSP frame-ancestors: `none`, `self`, or space-separated origins |
 
 ## Security
 
@@ -81,6 +82,18 @@ By default, cooked verifies TLS certificates when fetching upstream URLs. For in
 ### No credential forwarding
 
 cooked does not forward cookies, authorization headers, or other credentials to upstream servers.
+
+### Iframe embedding
+
+By default, cooked blocks iframe embedding (`frame-ancestors 'none'`). To embed cooked output in another site (e.g., Gitea or cgit rendering a README tab via cooked):
+
+```bash
+# Allow same-origin embedding
+./cooked --frame-ancestors=self
+
+# Allow specific origins
+./cooked --frame-ancestors="https://gitea.internal https://cgit.internal"
+```
 
 ## Docker
 

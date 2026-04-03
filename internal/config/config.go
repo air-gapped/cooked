@@ -20,6 +20,7 @@ type Config struct {
 	BaseURL          string
 	DefaultTheme     string
 	TLSSkipVerify    bool
+	FrameAncestors   string
 }
 
 // Parse reads configuration from CLI flags with environment variable fallback.
@@ -37,6 +38,7 @@ func Parse(args []string) (*Config, error) {
 	fs.StringVar(&cfg.BaseURL, "base-url", envOr("COOKED_BASE_URL", ""), "Public base URL of cooked (auto-detect from Host header if empty)")
 	fs.StringVar(&cfg.DefaultTheme, "default-theme", envOr("COOKED_DEFAULT_THEME", "auto"), "Default theme: auto, light, or dark")
 	fs.BoolVar(&cfg.TLSSkipVerify, "tls-skip-verify", envBoolOr("COOKED_TLS_SKIP_VERIFY", false), "Disable TLS certificate verification for upstream fetches")
+	fs.StringVar(&cfg.FrameAncestors, "frame-ancestors", envOr("COOKED_FRAME_ANCESTORS", "none"), "CSP frame-ancestors: none, self, or space-separated origins (e.g. \"https://gitea.internal\")")
 
 	if err := fs.Parse(args); err != nil {
 		return nil, err
@@ -63,6 +65,10 @@ func Parse(args []string) (*Config, error) {
 		return nil, fmt.Errorf("invalid default-theme %q: must be auto, light, or dark", cfg.DefaultTheme)
 	}
 
+	if err := validateFrameAncestors(cfg.FrameAncestors); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
 }
 
@@ -86,6 +92,23 @@ func validateAllowedUpstreams(raw string) error {
 			if len(entry) <= 2 {
 				return fmt.Errorf("empty wildcard suffix in %q", entry)
 			}
+		}
+	}
+	return nil
+}
+
+// validateFrameAncestors checks that the frame-ancestors value is well-formed.
+// Valid values: "none", "self", or space-separated origin URLs.
+func validateFrameAncestors(val string) error {
+	switch val {
+	case "none", "self":
+		return nil
+	case "":
+		return fmt.Errorf("invalid frame-ancestors: empty value")
+	}
+	for _, origin := range strings.Fields(val) {
+		if !strings.HasPrefix(origin, "https://") && !strings.HasPrefix(origin, "http://") {
+			return fmt.Errorf("invalid frame-ancestors origin %q: must be none, self, or a URL starting with http:// or https://", origin)
 		}
 	}
 	return nil

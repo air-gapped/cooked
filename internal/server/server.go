@@ -67,6 +67,10 @@ func New(cfg *config.Config, version string, assets fs.FS, extraFetchOpts ...fet
 	memCache := cache.New(cfg.CacheTTL, cfg.CacheMaxSize)
 	cachedClient := fetch.NewCachedClient(client, memCache)
 
+	if cfg.FrameAncestors == "" {
+		cfg.FrameAncestors = "none"
+	}
+
 	s := &Server{
 		cfg:            cfg,
 		version:        version,
@@ -456,7 +460,23 @@ func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upst
 	// F-10: Security response headers
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("X-Frame-Options", "DENY")
+
+	// Frame embedding: map config value to both X-Frame-Options and CSP frame-ancestors
+	frameAncestors := s.cfg.FrameAncestors
+	switch frameAncestors {
+	case "none":
+		w.Header().Set("X-Frame-Options", "DENY")
+	case "self":
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+	default:
+		// Specific origins — X-Frame-Options can't express this, rely on CSP only
+	}
+
+	cspFrameAncestors := "'" + frameAncestors + "'"
+	if frameAncestors != "none" && frameAncestors != "self" {
+		cspFrameAncestors = frameAncestors
+	}
+
 	w.Header().Set("Content-Security-Policy",
 		"default-src 'none'; "+
 			"script-src 'self' 'unsafe-inline'; "+
@@ -466,7 +486,7 @@ func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upst
 			"font-src data:; "+
 			"base-uri 'self'; "+
 			"form-action 'none'; "+
-			"frame-ancestors 'none'")
+			"frame-ancestors "+cspFrameAncestors)
 
 	w.Header().Set("X-Cooked-Version", version)
 	w.Header().Set("X-Cooked-Upstream", redactUpstream(upstream))

@@ -23,6 +23,7 @@ func newTestServer(t *testing.T, cfg *config.Config) *Server {
 			MaxFileSize:      5 * 1024 * 1024,
 			DefaultTheme:     "auto",
 			AllowedUpstreams: "127.0.0.0/8", // Allow loopback CIDR for tests
+			FrameAncestors:   "none",
 		}
 	}
 
