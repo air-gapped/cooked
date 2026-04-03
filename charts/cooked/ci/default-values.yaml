@@ -1,0 +1,14 @@
+# CI test values — default configuration
+replicaCount: 1
+
+cooked:
+  allowedUpstreams: "*.example.com,10.0.0.0/8"
+  defaultTheme: "auto"
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

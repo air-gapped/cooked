@@ -1,0 +1,22 @@
+# CI test values — CA certificate injection
+replicaCount: 1
+
+cooked:
+  allowedUpstreams: "*.internal"
+  tlsSkipVerify: false
+
+caCertificates:
+  enabled: true
+  inline:
+    internal-ca.crt: |
+      -----BEGIN CERTIFICATE-----
+      MIIBkTCB+wIUYz1234567890abcdef=
+      -----END CERTIFICATE-----
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

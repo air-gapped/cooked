@@ -1,0 +1,31 @@
+Thank you for installing {{ .Chart.Name }}!
+
+{{- if .Values.ingress.enabled }}
+
+Access cooked at:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}{{ (first .paths).path }}
+{{- end }}
+{{- else if contains "NodePort" .Values.service.type }}
+
+Get the application URL:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "cooked.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "ClusterIP" .Values.service.type }}
+
+Port-forward to access cooked:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "cooked.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+Then open:
+  http://localhost:{{ .Values.service.port }}/https://example.com/README.md
+{{- end }}
+
+{{- if .Values.cooked.allowedUpstreams }}
+
+Allowed upstreams: {{ .Values.cooked.allowedUpstreams }}
+{{- else }}
+
+WARNING: No --allowed-upstreams configured. SSRF protection is active (private IPs blocked).
+For air-gapped environments, set cooked.allowedUpstreams to your internal hosts.
+{{- end }}

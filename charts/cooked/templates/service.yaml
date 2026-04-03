@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cooked.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cooked.labels" . | nindent 4 }}
+  {{- $ann := include "cooked.annotations" . }}
+  {{- if or $ann .Values.service.annotations }}
+  annotations:
+    {{- with $ann }}
+    {{- . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if and (eq .Values.service.type "LoadBalancer") (not .Values.service.allocateLoadBalancerNodePorts) }}
+  allocateLoadBalancerNodePorts: false
+  {{- end }}
+  {{- with .Values.service.extraSpec }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- if and .Values.service.nodePort (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "cooked.selectorLabels" . | nindent 4 }}

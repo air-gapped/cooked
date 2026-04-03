@@ -1,0 +1,23 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cooked.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cooked.labels" . | nindent 4 }}
+  {{- with (include "cooked.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.pdb.minAvailable }}
+  minAvailable: {{ . }}
+  {{- end }}
+  {{- with .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cooked.selectorLabels" . | nindent 6 }}
+{{- end }}

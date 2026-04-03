@@ -1,0 +1,278 @@
+# yaml-language-server: $schema=values.schema.json
+
+# -- Annotations added to all resources
+commonAnnotations: {}
+# -- Labels added to all resources
+commonLabels: {}
+
+# -- Number of replicas
+replicaCount: 1
+
+# -- Image configuration
+image:
+  # -- Container image registry
+  registry: ghcr.io
+  # -- Container image repository
+  repository: air-gapped/cooked
+  # -- Container image tag (defaults to Chart.appVersion)
+  tag: ""
+  # -- Image digest — overrides tag when set (e.g. sha256:abc...)
+  # @default -- ""
+  digest: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Secrets for pulling images from private registries
+imagePullSecrets: []
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full release name
+fullnameOverride: ""
+
+# -- Service account configuration
+serviceAccount:
+  # -- Create a service account
+  create: true
+  # -- Auto-mount service account token (disabled for security)
+  automount: false
+  # -- Annotations for the service account
+  annotations: {}
+  # -- Override the service account name
+  name: ""
+
+# -- Pod-level security context
+podSecurityContext:
+  fsGroup: 1001
+  fsGroupChangePolicy: OnRootMismatch
+  runAsNonRoot: true
+
+# -- Container-level security context (PSS restricted profile)
+containerSecurityContext:
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Service configuration
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 80
+  # -- Container port (must match cooked listen port)
+  containerPort: 8080
+  # -- Explicit NodePort (only used when type is NodePort or LoadBalancer)
+  # @default -- "" (auto-assigned)
+  nodePort: ""
+  # -- Allocate NodePorts for LoadBalancer services (requires Kubernetes 1.24+)
+  allocateLoadBalancerNodePorts: false
+  # -- Service annotations
+  annotations: {}
+  # -- Extra fields merged into the Service spec — passthrough for any field
+  # not explicitly modeled above (e.g. externalTrafficPolicy, internalTrafficPolicy,
+  # loadBalancerSourceRanges, ipFamilyPolicy, loadBalancerClass)
+  extraSpec: {}
+    # externalTrafficPolicy: Local
+    # internalTrafficPolicy: Local
+    # loadBalancerSourceRanges:
+    #   - 10.0.0.0/8
+
+# -- Ingress configuration
+ingress:
+  # -- Enable ingress
+  enabled: false
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress hosts
+  hosts:
+    - host: cooked.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # -- TLS configuration
+  tls: []
+
+# -- Resource requests and limits
+resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 256Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Autoscaling configuration
+autoscaling:
+  # -- Enable horizontal pod autoscaling
+  enabled: false
+  # -- Minimum replicas
+  minReplicas: 1
+  # -- Maximum replicas
+  maxReplicas: 10
+  # -- Target CPU utilization percentage
+  targetCPUUtilizationPercentage: 80
+  # -- Target memory utilization percentage
+  # @default -- ""
+  targetMemoryUtilizationPercentage: ""
+  # -- HPA scaling behavior
+  behavior: {}
+
+# -- Pod disruption budget
+pdb:
+  # -- Enable PDB
+  enabled: false
+  # -- Minimum available pods
+  # @default -- ""
+  minAvailable: ""
+  # -- Maximum unavailable pods
+  maxUnavailable: 1
+
+# -- Network policy configuration
+networkPolicy:
+  # -- Enable network policy (requires CNI support)
+  enabled: false
+  # -- Allow traffic from same namespace
+  allowSameNamespace: true
+  # -- Additional ingress rules
+  additionalIngress: []
+  # -- Additional egress rules (add upstream hosts here)
+  additionalEgress: []
+
+# -- Node selector for pod scheduling
+nodeSelector: {}
+# -- Tolerations for pod scheduling
+tolerations: []
+# -- Affinity rules for pod scheduling
+affinity: {}
+# -- Topology spread constraints for pod scheduling
+topologySpreadConstraints: []
+  # - maxSkew: 1
+  #   topologyKey: kubernetes.io/hostname
+  #   whenUnsatisfiable: DoNotSchedule
+  #   labelSelector:
+  #     matchLabels: {}  # auto-populated with selector labels
+# -- Priority class name for pod scheduling
+priorityClassName: ""
+# -- Additional pod annotations
+podAnnotations: {}
+# -- Additional pod labels
+podLabels: {}
+
+# -- Liveness probe configuration
+livenessProbe:
+  # -- Enable liveness probe
+  enabled: true
+  # -- Initial delay before probing
+  initialDelaySeconds: 5
+  # -- Probe interval
+  periodSeconds: 10
+  # -- Probe timeout
+  timeoutSeconds: 3
+  # -- Failure threshold
+  failureThreshold: 3
+  # -- Success threshold
+  successThreshold: 1
+
+# -- Readiness probe configuration
+readinessProbe:
+  # -- Enable readiness probe
+  enabled: true
+  # -- Initial delay before probing
+  initialDelaySeconds: 3
+  # -- Probe interval
+  periodSeconds: 10
+  # -- Probe timeout
+  timeoutSeconds: 3
+  # -- Failure threshold
+  failureThreshold: 3
+  # -- Success threshold
+  successThreshold: 1
+
+# -- Startup probe configuration
+startupProbe:
+  # -- Enable startup probe
+  enabled: false
+  # -- Initial delay before probing
+  initialDelaySeconds: 0
+  # -- Probe interval
+  periodSeconds: 5
+  # -- Probe timeout
+  timeoutSeconds: 3
+  # -- Failure threshold
+  failureThreshold: 10
+  # -- Success threshold
+  successThreshold: 1
+
+# -- cooked application configuration (maps to COOKED_* env vars)
+cooked:
+  # -- Cache TTL duration (e.g. 5m, 1h). App default: 5m
+  # @default -- "" (uses app default: 5m)
+  cacheTTL: ""
+  # -- Max cache size (e.g. 100MB, 1GB). App default: 100MB
+  # @default -- "" (uses app default: 100MB)
+  cacheMaxSize: ""
+  # -- Upstream fetch timeout (e.g. 30s, 1m). App default: 30s
+  # @default -- "" (uses app default: 30s)
+  fetchTimeout: ""
+  # -- Max file size to render (e.g. 5MB, 10MB). App default: 5MB
+  # @default -- "" (uses app default: 5MB)
+  maxFileSize: ""
+  # -- Comma-separated allowed upstreams: hostnames, *.wildcard, or CIDR ranges
+  allowedUpstreams: ""
+  # -- Public base URL of cooked (auto-detect from Host header if empty)
+  baseURL: ""
+  # -- Default theme: auto, light, or dark. App default: auto
+  # @default -- "" (uses app default: auto)
+  defaultTheme: ""
+  # -- Disable TLS certificate verification for upstream fetches
+  tlsSkipVerify: false
+  # -- CSP frame-ancestors: none, self, or space-separated origins. App default: none
+  # @default -- "" (uses app default: none)
+  frameAncestors: ""
+  # -- Comma-separated trusted proxy IPs or CIDRs for X-Forwarded-For
+  trustedProxies: ""
+
+# -- Internal CA certificate injection for air-gapped environments
+caCertificates:
+  # -- Enable CA certificate injection
+  enabled: false
+  # -- Use an existing ConfigMap containing CA certificates
+  # The ConfigMap should have .crt files as keys
+  existingConfigMap: ""
+  # -- Use an existing Secret containing CA certificates
+  existingSecret: ""
+  # -- Inline CA certificates (each entry becomes a .crt file)
+  inline: {}
+    # my-internal-ca.crt: |
+    #   -----BEGIN CERTIFICATE-----
+    #   ...
+    #   -----END CERTIFICATE-----
+
+# -- Extra environment variables for the container
+extraEnvVars: []
+# -- ConfigMap name for extra environment variables
+extraEnvVarsCM: ""
+# -- Secret name for extra environment variables
+extraEnvVarsSecret: ""
+# -- Extra volume mounts for the main container
+extraVolumeMounts: []
+# -- Extra volumes for the pod
+extraVolumes: []
+# -- Extra init containers
+extraInitContainers: []
+# -- Extra sidecar containers
+extraContainers: []
+
+# -- OpenShift compatibility
+global:
+  compatibility:
+    openshift:
+      # -- Adapt security context for OpenShift (auto detects OpenShift and strips UID/GID)
+      adaptSecurityContext: auto

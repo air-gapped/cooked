@@ -1,0 +1,18 @@
+{{- if and .Values.caCertificates.enabled .Values.caCertificates.inline (not .Values.caCertificates.existingConfigMap) (not .Values.caCertificates.existingSecret) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cooked.fullname" . }}-ca-certs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cooked.labels" . | nindent 4 }}
+  {{- with (include "cooked.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+data:
+  {{- range $name, $cert := .Values.caCertificates.inline }}
+  {{ $name }}: |
+    {{- $cert | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -148,6 +148,38 @@ jobs:
             DELAY=$((DELAY * 2))
           done
 
+  helm-chart:
+    needs: release-please
+    if: needs.release-please.outputs.release_created
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    environment: release
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3 # v3.9.0
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package and push
+        run: |
+          helm package charts/cooked/
+          PACKAGE=$(ls cooked-*.tgz)
+          helm push "$PACKAGE" oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Sign chart
+        env:
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          VERSION="${TAG#v}"
+          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked:${VERSION}"
+
   upload-assets:
     needs: [release-please, build-binaries]
     if: needs.release-please.outputs.release_created

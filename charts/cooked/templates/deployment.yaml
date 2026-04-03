@@ -1,0 +1,219 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cooked.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cooked.labels" . | nindent 4 }}
+  {{- with (include "cooked.annotations" .) }}
+  annotations:
+    {{- . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "cooked.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "cooked.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "cooked.serviceAccountName" . }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.extraInitContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: {{ include "cooked.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "--listen"
+            - "0.0.0.0:{{ .Values.service.containerPort }}"
+            {{- if .Values.cooked.cacheTTL }}
+            - "--cache-ttl"
+            - {{ .Values.cooked.cacheTTL | quote }}
+            {{- end }}
+            {{- if .Values.cooked.cacheMaxSize }}
+            - "--cache-max-size"
+            - {{ .Values.cooked.cacheMaxSize | quote }}
+            {{- end }}
+            {{- if .Values.cooked.fetchTimeout }}
+            - "--fetch-timeout"
+            - {{ .Values.cooked.fetchTimeout | quote }}
+            {{- end }}
+            {{- if .Values.cooked.maxFileSize }}
+            - "--max-file-size"
+            - {{ .Values.cooked.maxFileSize | quote }}
+            {{- end }}
+            {{- if .Values.cooked.allowedUpstreams }}
+            - "--allowed-upstreams"
+            - {{ .Values.cooked.allowedUpstreams | quote }}
+            {{- end }}
+            {{- if .Values.cooked.baseURL }}
+            - "--base-url"
+            - {{ .Values.cooked.baseURL | quote }}
+            {{- end }}
+            {{- if .Values.cooked.defaultTheme }}
+            - "--default-theme"
+            - {{ .Values.cooked.defaultTheme | quote }}
+            {{- end }}
+            {{- if .Values.cooked.tlsSkipVerify }}
+            - "--tls-skip-verify"
+            {{- end }}
+            {{- if .Values.cooked.frameAncestors }}
+            - "--frame-ancestors"
+            - {{ .Values.cooked.frameAncestors | quote }}
+            {{- end }}
+            {{- if .Values.cooked.trustedProxies }}
+            - "--trusted-proxies"
+            - {{ .Values.cooked.trustedProxies | quote }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.containerPort }}
+              protocol: TCP
+          {{- with .Values.extraEnvVars }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if or .Values.extraEnvVarsCM .Values.extraEnvVarsSecret }}
+          envFrom:
+            {{- if .Values.extraEnvVarsCM }}
+            - configMapRef:
+                name: {{ .Values.extraEnvVarsCM }}
+            {{- end }}
+            {{- if .Values.extraEnvVarsSecret }}
+            - secretRef:
+                name: {{ .Values.extraEnvVarsSecret }}
+            {{- end }}
+          {{- end }}
+          {{- if .Values.customLivenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.customLivenessProbe | nindent 12 }}
+          {{- else if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.customReadinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.customReadinessProbe | nindent 12 }}
+          {{- else if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.customStartupProbe }}
+          startupProbe:
+            {{- toYaml .Values.customStartupProbe | nindent 12 }}
+          {{- else if .Values.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.startupProbe.successThreshold }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+            {{- if .Values.caCertificates.enabled }}
+            {{- if .Values.caCertificates.existingConfigMap }}
+            - name: ca-certs
+              mountPath: /usr/local/share/ca-certificates
+              readOnly: true
+            {{- else if .Values.caCertificates.existingSecret }}
+            - name: ca-certs
+              mountPath: /usr/local/share/ca-certificates
+              readOnly: true
+            {{- else if .Values.caCertificates.inline }}
+            - name: ca-certs
+              mountPath: /usr/local/share/ca-certificates
+              readOnly: true
+            {{- end }}
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        {{- with .Values.extraContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: ssl-certs
+          emptyDir: {}
+        {{- if .Values.caCertificates.enabled }}
+        {{- if .Values.caCertificates.existingConfigMap }}
+        - name: ca-certs
+          configMap:
+            name: {{ .Values.caCertificates.existingConfigMap }}
+        {{- else if .Values.caCertificates.existingSecret }}
+        - name: ca-certs
+          secret:
+            secretName: {{ .Values.caCertificates.existingSecret }}
+        {{- else if .Values.caCertificates.inline }}
+        - name: ca-certs
+          configMap:
+            name: {{ include "cooked.fullname" . }}-ca-certs
+        {{- end }}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

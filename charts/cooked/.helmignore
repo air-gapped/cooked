@@ -1,0 +1,29 @@
+# VCS
+.git/
+.github/
+.gitignore
+
+# IDE/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# CI
+Makefile
+Jenkinsfile
+
+# Security
+.env
+*secret*
+*.key
+*.pem
+*.crt
+
+# Development
+*.md.gotmpl
+ci/
+
+# Snapshots
+*/__snapshot__/*
