@@ -167,18 +167,23 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Package and push
+        id: push-chart
+        env:
+          OWNER: ${{ github.repository_owner }}
         run: |
           helm package charts/cooked/
           PACKAGE=$(ls cooked-*.tgz)
-          helm push "$PACKAGE" oci://ghcr.io/${{ github.repository_owner }}/charts
+          OUTPUT=$(helm push "$PACKAGE" oci://ghcr.io/${OWNER}/charts 2>&1)
+          echo "$OUTPUT"
+          DIGEST=$(echo "$OUTPUT" | grep -oP 'sha256:[a-f0-9]+')
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Sign chart
         env:
-          TAG: ${{ needs.release-please.outputs.tag_name }}
           OWNER: ${{ github.repository_owner }}
+          DIGEST: ${{ steps.push-chart.outputs.digest }}
         run: |
-          VERSION="${TAG#v}"
-          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked:${VERSION}"
+          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked@${DIGEST}"
 
   upload-assets:
     needs: [release-please, build-binaries]
