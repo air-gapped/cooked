@@ -23,8 +23,4 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
         run: |
-          OUTPUT=$(helm pull oci://ghcr.io/${OWNER}/charts/cooked --version 1.4.0 2>&1)
-          echo "$OUTPUT"
-          DIGEST=$(echo "$OUTPUT" | grep -oP 'sha256:[a-f0-9]+')
-          echo "Signing ghcr.io/${OWNER}/charts/cooked@${DIGEST}"
-          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked@${DIGEST}"
+          cosign sign --yes "ghcr.io/${OWNER}/charts/cooked@sha256:d57d101d63d8c71630653fbe058fbd2b40a96e765ca94b75c2b79ce764bf5012"
