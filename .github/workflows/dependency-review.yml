@@ -13,7 +13,7 @@ permissions: {}
 jobs:
   # Layer 1: Known CVE + license check (free, fast)
   vulnerability-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: write
@@ -25,7 +25,7 @@ jobs:
 
   # Layer 2: AI security review of upstream changes
   ai-dependency-review:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pull-requests: read

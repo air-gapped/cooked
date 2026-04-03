@@ -8,7 +8,7 @@ permissions: {}
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -30,7 +30,7 @@ jobs:
   build-binaries:
     needs: release-please
     if: needs.release-please.outputs.release_created
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     environment: release
@@ -76,13 +76,17 @@ jobs:
   docker:
     needs: release-please
     if: needs.release-please.outputs.release_created
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
+      id-token: write
     environment: release
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3 # v3.9.0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4
@@ -98,6 +102,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
+        id: build-push
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         env:
           TAG: ${{ needs.release-please.outputs.tag_name }}
@@ -112,10 +117,26 @@ jobs:
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
 
+      - name: Sign image with cosign
+        env:
+          DIGEST: ${{ steps.build-push.outputs.digest }}
+          REPO: ${{ github.repository }}
+        run: |
+          IMAGE="ghcr.io/${REPO}@${DIGEST}"
+          echo "Signing ${IMAGE}"
+          MAX_RETRIES=5
+          DELAY=10
+          for i in $(seq 1 $MAX_RETRIES); do
+            cosign sign --yes "$IMAGE" && break
+            echo "cosign attempt $i/$MAX_RETRIES failed, retrying in ${DELAY}s..."
+            sleep $DELAY
+            DELAY=$((DELAY * 2))
+          done
+
   upload-assets:
     needs: [release-please, build-binaries]
     if: needs.release-please.outputs.release_created
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
