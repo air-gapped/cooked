@@ -85,8 +85,25 @@ cooked does not forward cookies, authorization headers, or other credentials to 
 ## Docker
 
 ```bash
-docker run -p 8080:8080 cooked
-docker run -p 8080:8080 cooked --allowed-upstreams="*.internal,10.0.0.0/8"
+docker run -p 8080:8080 ghcr.io/air-gapped/cooked:latest
+docker run -p 8080:8080 ghcr.io/air-gapped/cooked:latest --allowed-upstreams="*.internal,10.0.0.0/8"
+```
+
+### Image verification
+
+Container images are signed with [cosign](https://github.com/sigstore/cosign) keyless signing and include an SPDX SBOM attestation.
+
+```bash
+# Verify image signature
+cosign verify ghcr.io/air-gapped/cooked:latest \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp github.com/air-gapped/cooked
+
+# Verify SBOM attestation
+cosign verify-attestation ghcr.io/air-gapped/cooked:latest \
+  --type spdxjson \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp github.com/air-gapped/cooked
 ```
 
 ### Internal CA certificates
