@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/air-gapped/cooked/internal/cache"
@@ -35,6 +36,7 @@ type Server struct {
 	assets         fs.FS
 	docsAssets     fs.FS
 	allowlist      *Allowlist
+	healthzCount   atomic.Int64
 	trustedProxies []*net.IPNet
 	mux            *http.ServeMux
 	readmePage     []byte // pre-rendered docs page (nil if README not embedded)
@@ -96,6 +98,7 @@ func New(cfg *config.Config, version string, assets fs.FS, docsAssets fs.FS, ext
 }
 
 func (s *Server) routes() {
+	s.mux.HandleFunc("GET /favicon.ico", s.handleFavicon)
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("GET /_cooked/docs", s.handleDocs)
 	s.mux.HandleFunc("GET /_cooked/docs/{path...}", s.handleDocsAsset)
@@ -111,6 +114,14 @@ func (s *Server) Handler() http.Handler {
 	var h http.Handler = s.mux
 	h = s.loggingMiddleware(h)
 	return h
+}
+
+var favicon = []byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">🍳</text></svg>`)
+
+func (s *Server) handleFavicon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "public, max-age=604800")
+	w.Write(favicon)
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -519,6 +530,8 @@ func (s *Server) setResponseHeaders(w http.ResponseWriter, upstream string, upst
 	w.Header().Set("X-Cooked-Upstream-Ms", fmt.Sprintf("%d", upstreamMs))
 }
 
+const healthzLogLimit = 3
+
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -527,6 +540,18 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 
 		if wrapped.StatusCode == 0 {
 			wrapped.StatusCode = 200
+		}
+
+		// Suppress healthz probe logging after the first few requests.
+		if r.URL.Path == "/healthz" {
+			n := s.healthzCount.Add(1)
+			if n == healthzLogLimit+1 {
+				slog.Info("healthz probes healthy, suppressing further logs",
+					"logged_count", healthzLogLimit)
+			}
+			if n > healthzLogLimit {
+				return
+			}
 		}
 
 		logging.LogRequest(slog.Default(), logging.RequestFields{
