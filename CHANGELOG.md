@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.4.0](https://github.com/air-gapped/cooked/compare/v1.3.2...v1.4.0) (2026-04-03)
+
+
+### Features
+
+* add --frame-ancestors flag for iframe embedding ([8c9536f](https://github.com/air-gapped/cooked/commit/8c9536f02c030a2b12f5b4d219755d3bcf874b37))
+* add --trusted-proxies for X-Forwarded-For client IP logging ([e50437a](https://github.com/air-gapped/cooked/commit/e50437ac2386b7d2ea7b43d7f51fa6ca8ce187f1))
+* add Helm chart for Kubernetes deployment ([eae7614](https://github.com/air-gapped/cooked/commit/eae761488ecd6c262ea4e6a2108d501972819da6))
+* proxy images and assets through /_cooked/raw/ to fix CORS ([0a7c38e](https://github.com/air-gapped/cooked/commit/0a7c38ec9b982d1df5a6390b00ec8a4b8e804d73))
+
 ## [1.3.2](https://github.com/air-gapped/cooked/compare/v1.3.1...v1.3.2) (2026-04-03)
 
 
