@@ -85,12 +85,14 @@ Never run bare `go get` without checking the latest version first.
 **When adding or modifying configurable features, you MUST update ALL relevant places:**
 
 1. **CLI flags** — Add flag definition with env var fallback in `cmd/cooked/main.go`
-2. **`.claude/skills/`** — Update the appropriate skill
-3. **README.md** — Update user-facing documentation (configuration, security, usage)
+2. **Helm chart** — Add corresponding value in `charts/cooked/values.yaml` and wire it in `templates/deployment.yaml`
+3. **`.claude/skills/`** — Update the appropriate skill
+4. **README.md** — Update user-facing documentation (configuration, security, usage)
 
 
 **Checklist before completing a feature:**
 - [ ] Is the CLI flag documented with `--help` text?
+- [ ] Is the Helm chart value added and wired?
 - [ ] Is the feature documented in the appropriate skill?
 - [ ] Is README.md updated with user-facing documentation?
 
