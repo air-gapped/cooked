@@ -164,21 +164,11 @@ services:
 ## Helm
 
 ```bash
-helm install cooked oci://ghcr.io/air-gapped/charts/cooked --version 1.3.2
+helm install cooked oci://ghcr.io/air-gapped/charts/cooked \
+  --set cooked.allowedUpstreams="*.internal,10.0.0.0/8"
 ```
 
-Or with custom values:
-
-```bash
-helm install cooked oci://ghcr.io/air-gapped/charts/cooked --version 1.3.2 \
-  --set cooked.allowedUpstreams="*.internal,10.0.0.0/8" \
-  --set ingress.enabled=true \
-  --set ingress.hosts[0].host=cooked.example.com \
-  --set ingress.hosts[0].paths[0].path=/ \
-  --set ingress.hosts[0].paths[0].pathType=Prefix
-```
-
-The chart version is synced with the application version. See [`charts/cooked/values.yaml`](charts/cooked/values.yaml) for all available values.
+The chart version is synced with the application version — check [releases](https://github.com/air-gapped/cooked/releases) for the latest. See [`charts/cooked/values.yaml`](charts/cooked/values.yaml) for all available values.
 
 Key features:
 - All cooked flags exposed as `cooked.*` values
