@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.1](https://github.com/air-gapped/cooked/compare/v1.5.0...v1.5.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* suppress healthz probe log noise and add favicon ([342c198](https://github.com/air-gapped/cooked/commit/342c1980e87fac7c3a5547ef834baa6da6b459f4))
+* update favicon to three-layer flame SVG ([53d37d3](https://github.com/air-gapped/cooked/commit/53d37d3164a3d42ca12c558705974bc6fa497089))
+* update favicon to three-layer flame SVG ([8814cd7](https://github.com/air-gapped/cooked/commit/8814cd7e48e7e1988646803c91a85d61babc5f07))
+
 ## [1.5.0](https://github.com/air-gapped/cooked/compare/v1.4.1...v1.5.0) (2026-04-03)
 
 
