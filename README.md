@@ -161,6 +161,34 @@ services:
     command: ["--allowed-upstreams=*.internal,10.0.0.0/8,gitea.corp.example.com"]
 ```
 
+## Helm
+
+```bash
+helm install cooked oci://ghcr.io/air-gapped/charts/cooked --version 1.3.2
+```
+
+Or with custom values:
+
+```bash
+helm install cooked oci://ghcr.io/air-gapped/charts/cooked --version 1.3.2 \
+  --set cooked.allowedUpstreams="*.internal,10.0.0.0/8" \
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=cooked.example.com \
+  --set ingress.hosts[0].paths[0].path=/ \
+  --set ingress.hosts[0].paths[0].pathType=Prefix
+```
+
+The chart version is synced with the application version. See [`charts/cooked/values.yaml`](charts/cooked/values.yaml) for all available values.
+
+Key features:
+- All cooked flags exposed as `cooked.*` values
+- CA certificate injection for air-gapped environments (`caCertificates.*`)
+- PSS restricted security context
+- Ingress with TLS support
+- HPA, PDB, NetworkPolicy
+- `commonAnnotations` and `commonLabels` for all resources
+- `service.extraSpec` passthrough for any Kubernetes Service field
+
 ## Special paths
 
 | Path | Description |
