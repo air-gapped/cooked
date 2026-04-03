@@ -147,6 +147,17 @@ services:
     command: ["--allowed-upstreams=*.internal,10.0.0.0/8,gitea.corp.example.com"]
 ```
 
+## Special paths
+
+| Path | Description |
+|------|-------------|
+| `GET /` | Landing page with URL input field |
+| `GET /healthz` | Health check (200 OK) |
+| `GET /_cooked/docs` | Embedded project documentation |
+| `GET /_cooked/raw/{url}` | Raw proxy — fetches upstream content without rendering. Used internally to proxy images and assets so the browser doesn't need direct access to the upstream. Subject to allowlist and SSRF protections. |
+| `GET /_cooked/{path}` | Embedded assets (mermaid.min.js, CSS) |
+| `GET /{upstream_url}` | Main render endpoint — fetches, renders, and returns styled HTML |
+
 ## Response headers
 
 cooked sets response headers for monitoring and debugging:
