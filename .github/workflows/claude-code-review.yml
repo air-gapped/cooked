@@ -11,8 +11,7 @@ jobs:
     if: >-
       github.event.pull_request.author_association == 'OWNER' ||
       github.event.pull_request.author_association == 'MEMBER' ||
-      github.event.pull_request.user.login == 'renovate[bot]' ||
-      github.event.pull_request.user.login == 'dependabot[bot]'
+      github.event.pull_request.user.login == 'renovate[bot]'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -34,4 +33,4 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          allowed_bots: 'renovate[bot],air-gapped-cooked-renovate[bot],air-gapped-release-bot[bot],dependabot[bot]'
+          allowed_bots: 'renovate[bot],air-gapped-cooked-renovate[bot],air-gapped-release-bot[bot]'
