@@ -36,3 +36,5 @@ coverage.html
 
 # ideas
 .ideas/
+# br doctor per-run artifacts
+.doctor/
