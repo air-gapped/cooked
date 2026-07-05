@@ -39,6 +39,16 @@ beads.right.meta.json
 sync_base.jsonl
 export-state/
 
+# Write-serialization lock (runtime flock, machine-local)
+.write.lock
+
+# bv (beads viewer) lock file
+.bv.lock
+
+# Local history backups + recovery artifacts (per-machine, rotated by br)
+.br_history/
+.br_recovery/
+
 # Process semaphore slot files (runtime concurrency limiting)
 sem/
 
